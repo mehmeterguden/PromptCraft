@@ -4,12 +4,12 @@ import "./globals.css";
 
 const inter = Inter({
   subsets: ["latin"],
-  display: "swap",
+  variable: "--font-inter",
 });
 
 export const metadata: Metadata = {
-  title: "Prompt Mühendisliği Öğrenme Platformu",
-  description: "Prompt mühendisliği becerilerinizi geliştirin ve test edin.",
+  title: "Prompt Öğrenme Platformu",
+  description: "Prompt mühendisliği öğrenme ve pratik yapma platformu",
 };
 
 export default function RootLayout({
@@ -19,7 +19,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="tr">
-      <body className={`${inter.className} antialiased`}>
+      <body className={`${inter.variable} font-sans antialiased`}>
         {children}
       </body>
     </html>

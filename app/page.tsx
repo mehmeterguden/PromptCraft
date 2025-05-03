@@ -5,6 +5,8 @@ import { LockClosedIcon } from '@heroicons/react/24/solid';
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 import { ChatBubbleLeftRightIcon, LightBulbIcon, CheckCircleIcon, XCircleIcon, SparklesIcon, BeakerIcon, RocketLaunchIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import { testQuestions, levelQuestions } from './data/questions';
+import type { TestQuestion, LevelQuestion } from './types/questions';
 
 interface Level {
   number: number;
@@ -12,9 +14,6 @@ interface Level {
   isLocked: boolean;
   isCompleted: boolean;
   isCurrent: boolean;
-  question?: string;
-  context?: string;
-  hints?: string[];
 }
 
 interface LevelModalProps {
@@ -28,13 +27,6 @@ interface SelfTestModalProps {
   isOpen: boolean;
   closeModal: () => void;
   onComplete: (level: number) => void;
-}
-
-interface TestQuestion {
-  difficulty: 'Kolay' | 'Orta' | 'Zor';
-  question: string;
-  task: string;
-  hints: string[];
 }
 
 // Level Modal Component
@@ -51,6 +43,7 @@ const LevelModal = ({ isOpen, closeModal, level, currentLevel }: LevelModalProps
   if (!level) return null;
 
   const isLevelAvailable = level.number <= currentLevel;
+  const levelQuestion = levelQuestions.find(q => q.level === level.number);
 
   const handleSubmit = () => {
     // Simüle edilmiş değerlendirme - Gerçek implementasyonda Gemini API kullanılacak
@@ -71,18 +64,6 @@ const LevelModal = ({ isOpen, closeModal, level, currentLevel }: LevelModalProps
     setIsSubmitted(false);
     setFeedback(null);
     setShowHints(false);
-  };
-
-  const demoLevel: Level = {
-    ...level,
-    question: "Bir e-ticaret sitesi için ürün açıklaması yazan bir prompt oluşturun.",
-    context: "Müşteriler ürün açıklamalarının detaylı, ikna edici ve SEO dostu olmasını istiyor. Açıklamalar hem bilgilendirici hem de satış odaklı olmalı.",
-    hints: [
-      "Ürünün özelliklerini ve faydalarını vurgulayın",
-      "Hedef kitleyi belirtin",
-      "Ton ve üslup tercihlerini ekleyin",
-      "Kelime sayısı sınırı belirtin"
-    ]
   };
 
   return (
@@ -117,15 +98,15 @@ const LevelModal = ({ isOpen, closeModal, level, currentLevel }: LevelModalProps
                   <Dialog.Title className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
                     <span className="flex items-center gap-2">
                       <ChatBubbleLeftRightIcon className="w-8 h-8 text-[#4285F4]" />
-                      Seviye {demoLevel.number} - {demoLevel.difficulty}
+                      Seviye {level?.number} - {level?.difficulty}
                     </span>
                   </Dialog.Title>
                   <p className="mt-2 text-gray-600 dark:text-gray-400">
-                    {demoLevel.isCompleted ? 'Bu seviyeyi tamamladınız!' : demoLevel.isCurrent ? 'Şu anki seviyeniz' : demoLevel.isLocked ? 'Bu seviye henüz kilitli' : 'Bu seviyeye erişebilirsiniz'}
+                    {level?.isCompleted ? 'Bu seviyeyi tamamladınız!' : level?.isCurrent ? 'Şu anki seviyeniz' : level?.isLocked ? 'Bu seviye henüz kilitli' : 'Bu seviyeye erişebilirsiniz'}
                   </p>
                 </div>
 
-                {isLevelAvailable ? (
+                {isLevelAvailable && levelQuestion ? (
                   <div className="space-y-6">
                     {/* Question Section */}
                     <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
@@ -133,14 +114,14 @@ const LevelModal = ({ isOpen, closeModal, level, currentLevel }: LevelModalProps
                         Soru
                       </h3>
                       <p className="text-gray-700 dark:text-gray-300">
-                        {demoLevel.question}
+                        {levelQuestion.question}
                       </p>
                       <div className="mt-4 bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
                         <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                          Bağlam
+                          Görev
                         </h4>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
-                          {demoLevel.context}
+                          {levelQuestion.task}
                         </p>
                       </div>
                     </div>
@@ -166,7 +147,7 @@ const LevelModal = ({ isOpen, closeModal, level, currentLevel }: LevelModalProps
                             İpuçları
                           </h4>
                           <ul className="list-disc list-inside space-y-1">
-                            {demoLevel.hints?.map((hint, index) => (
+                            {levelQuestion.hints.map((hint, index) => (
                               <li key={index} className="text-sm text-gray-600 dark:text-gray-400">
                                 {hint}
                               </li>
@@ -248,7 +229,7 @@ const LevelModal = ({ isOpen, closeModal, level, currentLevel }: LevelModalProps
                         Seviye Yetersiz
                       </h3>
                       <p className="text-gray-600 dark:text-gray-400 max-w-md mx-auto">
-                        Bu seviyeye erişmek için {demoLevel.number}. seviyeye ulaşmanız gerekiyor. 
+                        Bu seviyeye erişmek için {level?.number}. seviyeye ulaşmanız gerekiyor. 
                         Şu anki seviyeniz: {currentLevel}
                       </p>
                       <div className="mt-8">
@@ -271,71 +252,214 @@ const LevelModal = ({ isOpen, closeModal, level, currentLevel }: LevelModalProps
   );
 };
 
-// Self Test Modal Component
 const SelfTestModal = ({ isOpen, closeModal, onComplete }: SelfTestModalProps) => {
-  const [answers, setAnswers] = useState<string[]>(Array(3).fill(''));
-  const [submitted, setSubmitted] = useState(false);
-  const [feedback, setFeedback] = useState<{
-    success: boolean;
-    message: string;
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [prompt, setPrompt] = useState('');
+  const [showHints, setShowHints] = useState(false);
+  const [answers, setAnswers] = useState<string[]>(['', '', '']);
+  const [showResults, setShowResults] = useState(false);
+  const [testResults, setTestResults] = useState<{
+    totalScore: number;
     recommendedLevel: number;
-    analysis: string[];
-    overallScore: number;
+    feedback: Array<{
+      score: number;
+      feedback: string;
+      suggestions: string[];
+    }>;
   } | null>(null);
 
-  const questions: TestQuestion[] = [
-    {
-      difficulty: 'Kolay',
-      question: 'Basit bir to-do list uygulaması için prompt yazın.',
-      task: 'Bir to-do list uygulaması için AI asistana detaylı talimatlar verin. Asistanın oluşturacağı uygulamada kullanıcılar görevleri ekleyebilmeli, silebilmeli ve tamamlandı olarak işaretleyebilmelidir.',
-      hints: ['Temel özellikleri listeleyin', 'Kullanıcı etkileşimlerini tanımlayın']
-    },
-    {
-      difficulty: 'Orta',
-      question: "Bir yapay zeka asistanına kişilik özellikleri tanımlayan bir prompt yazın.",
-      task: "Profesyonel bir danışman rolünde bir AI asistan yaratın. Asistan empati kurabilmeli, teknik konularda uzmanlık gösterebilmeli ve kullanıcıya yardımcı olmalıdır. Asistanın karakterini ve davranışlarını detaylı olarak tanımlayın.",
-      hints: [
-        "Kişilik özelliklerini detaylandırın",
-        "İletişim tarzını belirleyin",
-        "Uzmanlık alanlarını tanımlayın",
-        "Sınırlamaları belirtin"
-      ]
-    },
-    {
-      difficulty: 'Zor',
-      question: "Karmaşık bir veri analizi için adım adım yönergeler içeren bir prompt oluşturun.",
-      task: "Farklı veri kaynaklarından gelen bilgileri analiz edip, anlamlı içgörüler çıkaran ve bunları görselleştiren bir sistem için detaylı talimatlar yazın. Veri işleme adımlarını, analiz yöntemlerini ve çıktı formatını belirtin.",
-      hints: [
-        "Veri kaynaklarını ve formatlarını belirtin",
-        "Analiz adımlarını sıralayın",
-        "Çıktı formatını tanımlayın",
-        "Hata kontrollerini ekleyin"
-      ]
-    }
-  ];
+  const currentQuestion = testQuestions[currentQuestionIndex];
+  const progress = ((currentQuestionIndex + 1) / testQuestions.length) * 100;
 
-  const handleSubmit = () => {
-    setSubmitted(true);
-    const recommendedLevel = Math.floor(Math.random() * 5) + 3; // Simüle edilmiş - 3-7 arası
-    setFeedback({
-      success: true,
-      message: "Test başarılı! Önerilen başlangıç seviyesi: " + recommendedLevel,
-      recommendedLevel,
-      analysis: [
-        "Kolay seviye prompt: İyi yapılandırılmış ve açık talimatlar",
-        "Orta seviye prompt: Temel gereksinimler karşılanmış",
-        "Zor seviye prompt: Daha spesifik yönergeler eklenebilir"
-      ],
-      overallScore: 75
-    });
+  const handleNext = () => {
+    if (currentQuestionIndex < testQuestions.length - 1) {
+      setAnswers(prev => {
+        const newAnswers = [...prev];
+        newAnswers[currentQuestionIndex] = prompt;
+        return newAnswers;
+      });
+      setCurrentQuestionIndex(prev => prev + 1);
+      setPrompt(answers[currentQuestionIndex + 1]);
+      setShowHints(false);
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentQuestionIndex > 0) {
+      setAnswers(prev => {
+        const newAnswers = [...prev];
+        newAnswers[currentQuestionIndex] = prompt;
+        return newAnswers;
+      });
+      setCurrentQuestionIndex(prev => prev - 1);
+      setPrompt(answers[currentQuestionIndex - 1]);
+      setShowHints(false);
+    }
+  };
+
+  const evaluateTest = () => {
+    // Son sorunun cevabını kaydet
+    const finalAnswers = [...answers];
+    finalAnswers[currentQuestionIndex] = prompt;
+
+    // Simüle edilmiş değerlendirme - Gerçek implementasyonda Gemini API kullanılacak
+    const results = {
+      totalScore: 0,
+      recommendedLevel: 1,
+      feedback: finalAnswers.map((answer, index) => {
+        const score = Math.min(100, Math.max(0, answer.length / 5)); // Simüle edilmiş skor
+        return {
+          score,
+          feedback: score > 70 
+            ? "Mükemmel! Prompt yazma tekniklerini iyi kullanmışsınız." 
+            : "Geliştirilebilir. Daha spesifik ve detaylı promptlar yazabilirsiniz.",
+          suggestions: [
+            "Daha net talimatlar ekleyebilirsiniz",
+            "Bağlamı daha iyi tanımlayabilirsiniz",
+            "Çıktı formatını belirtebilirsiniz"
+          ]
+        };
+      })
+    };
+
+    // Toplam skoru hesapla
+    results.totalScore = Math.round(
+      results.feedback.reduce((acc, curr) => acc + curr.score, 0) / results.feedback.length
+    );
+
+    // Önerilen seviyeyi belirle
+    results.recommendedLevel = Math.max(1, Math.min(30, Math.floor(results.totalScore / 3.33)));
+
+    setTestResults(results);
+    setShowResults(true);
   };
 
   const handleComplete = () => {
-    if (feedback) {
-      onComplete(feedback.recommendedLevel);
+    if (testResults) {
+      onComplete(testResults.recommendedLevel);
       closeModal();
     }
   };
+
+  const handleReset = () => {
+    setPrompt('');
+    setShowHints(false);
+  };
+
+  if (showResults && testResults) {
+    return (
+      <Transition appear show={isOpen} as={Fragment}>
+        <Dialog as="div" className="relative z-50" onClose={closeModal}>
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black/25 backdrop-blur-sm" />
+          </Transition.Child>
+
+          <div className="fixed inset-0 overflow-y-auto">
+            <div className="flex min-h-full items-center justify-center p-4">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 scale-95"
+                enterTo="opacity-100 scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 scale-100"
+                leaveTo="opacity-0 scale-95"
+              >
+                <Dialog.Panel className="w-full max-w-4xl transform overflow-hidden rounded-2xl bg-white dark:bg-gray-800 p-6 text-left align-middle shadow-xl transition-all">
+                  <div className="border-b border-gray-200 dark:border-gray-700 pb-4 mb-6">
+                    <Dialog.Title className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center justify-between">
+                      <span className="flex items-center gap-2">
+                        <SparklesIcon className="w-8 h-8 text-[#4285F4]" />
+                        Test Sonuçları
+                      </span>
+                    </Dialog.Title>
+                  </div>
+
+                  <div className="space-y-8">
+                    {/* Genel Skor */}
+                    <div className="bg-gradient-to-r from-[#4285F4]/10 to-[#34A853]/10 rounded-xl p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                          Genel Performans
+                        </h3>
+                        <div className="flex items-center gap-2">
+                          <span className="text-2xl font-bold text-[#4285F4]">
+                            {testResults.totalScore}
+                          </span>
+                          <span className="text-gray-600 dark:text-gray-400">/ 100</span>
+                        </div>
+                      </div>
+                      <p className="text-gray-600 dark:text-gray-400">
+                        Önerilen Başlangıç Seviyesi: {testResults.recommendedLevel}
+                      </p>
+                    </div>
+
+                    {/* Soru Detayları */}
+                    <div className="space-y-4">
+                      {testResults.feedback.map((result, index) => (
+                        <div key={index} className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+                          <div className="flex items-center justify-between mb-4">
+                            <h4 className="font-medium text-gray-900 dark:text-gray-100">
+                              Soru {index + 1} - {testQuestions[index].difficulty}
+                            </h4>
+                            <span className="text-lg font-semibold text-[#4285F4]">
+                              {result.score}/100
+                            </span>
+                          </div>
+                          <div className="space-y-3">
+                            <p className="text-gray-600 dark:text-gray-400">
+                              {result.feedback}
+                            </p>
+                            <div className="bg-[#4285F4]/5 rounded-lg p-4">
+                              <h5 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                                Öneriler
+                              </h5>
+                              <ul className="list-disc list-inside space-y-1">
+                                {result.suggestions.map((suggestion, i) => (
+                                  <li key={i} className="text-sm text-gray-600 dark:text-gray-400">
+                                    {suggestion}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Aksiyon Butonları */}
+                    <div className="flex justify-end gap-3 pt-4">
+                      <button
+                        onClick={closeModal}
+                        className="px-6 py-2 rounded-lg font-medium border-2 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900 transition-all duration-300"
+                      >
+                        Kapat
+                      </button>
+                      <button
+                        onClick={handleComplete}
+                        className="px-6 py-2 rounded-lg font-medium bg-gradient-to-r from-[#4285F4] to-[#34A853] text-white hover:opacity-90 transition-all duration-300 flex items-center gap-2"
+                      >
+                        Seviyeye Başla
+                        <RocketLaunchIcon className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </div>
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </div>
+        </Dialog>
+      </Transition>
+    );
+  }
 
   return (
     <Transition appear show={isOpen} as={Fragment}>
@@ -366,191 +490,139 @@ const SelfTestModal = ({ isOpen, closeModal, onComplete }: SelfTestModalProps) =
               <Dialog.Panel className="w-full max-w-4xl transform overflow-hidden rounded-2xl bg-white dark:bg-gray-800 p-6 text-left align-middle shadow-xl transition-all">
                 {/* Header */}
                 <div className="border-b border-gray-200 dark:border-gray-700 pb-4 mb-6">
-                  <Dialog.Title className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                    Seviye Belirleme Testi
+                  <Dialog.Title className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                      <BeakerIcon className="w-8 h-8 text-[#4285F4]" />
+                      Seviye Belirleme Testi
+                    </span>
+                    <span className="text-lg font-normal text-gray-600 dark:text-gray-400">
+                      Soru {currentQuestionIndex + 1} / {testQuestions.length}
+                    </span>
                   </Dialog.Title>
-                  <p className="mt-2 text-gray-600 dark:text-gray-400">
-                    Her zorluk seviyesi için bir prompt yazın. Performansınıza göre başlangıç seviyeniz belirlenecek.
-                  </p>
+                  
+                  {/* Progress Bar */}
+                  <div className="mt-4 h-2 w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-[#4285F4] transition-all duration-300 ease-in-out"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
                 </div>
 
-                {!submitted ? (
-                  <div className="space-y-8">
-                    {/* Progress Bar */}
-                    <div className="relative pt-1">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                          İlerleme
-                        </div>
-                        <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                          {answers.filter(Boolean).length}/3 Soru
-                        </div>
-                      </div>
-                      <div className="flex h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
-                        {[0, 1, 2].map((index) => (
-                          <div
-                            key={index}
-                            className="transition-all duration-300"
-                            style={{
-                              width: '33.333%',
-                              backgroundColor: answers[index] ? '#4285F4' : 'transparent',
-                            }}
-                          />
-                        ))}
-                      </div>
+                <div className="space-y-6">
+                  {/* Question Section */}
+                  <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center gap-2 mb-4">
+                      <RocketLaunchIcon className="w-5 h-5 text-[#4285F4]" />
+                      <span className={`text-sm font-medium px-2 py-1 rounded-full ${
+                        currentQuestion.difficulty === 'Kolay' ? 'bg-green-100 text-green-800' :
+                        currentQuestion.difficulty === 'Orta' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-red-100 text-red-800'
+                      }`}>
+                        {currentQuestion.difficulty}
+                      </span>
                     </div>
-
-                    {/* Questions */}
-                    <div className="space-y-6">
-                      {questions.map((q, index) => (
-                        <div
-                          key={index}
-                          className={`rounded-xl border-2 p-6 transition-all duration-300 ${
-                            answers[index]
-                              ? 'border-[#4285F4] bg-gradient-to-br from-[#4285F4]/5 to-transparent'
-                              : 'border-gray-200 dark:border-gray-700'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center gap-3">
-                              {q.difficulty === 'Kolay' && <BeakerIcon className="w-6 h-6 text-[#4285F4]" />}
-                              {q.difficulty === 'Orta' && <SparklesIcon className="w-6 h-6 text-[#FBBC05]" />}
-                              {q.difficulty === 'Zor' && <RocketLaunchIcon className="w-6 h-6 text-[#EA4335]" />}
-                              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                                {index + 1}. Soru - {q.difficulty} Seviye
-                              </h3>
-                            </div>
-                          </div>
-
-                          <div className="space-y-6">
-                            <div>
-                              <p className="text-gray-700 dark:text-gray-300 mb-3 text-lg">
-                                {q.question}
-                              </p>
-                              <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-                                <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                                  Görev
-                                </h4>
-                                <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                                  {q.task}
-                                </p>
-                              </div>
-                            </div>
-
-                            <div className="space-y-4">
-                              <div className="flex justify-between items-center">
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                  Promptunuz
-                                </label>
-                                <button
-                                  onClick={() => setAnswers(prev => prev.map((_, i) => i === index ? '' : _))}
-                                  className="text-sm text-[#4285F4] hover:text-[#4285F4]/80 flex items-center gap-1"
-                                >
-                                  <ArrowPathIcon className="w-4 h-4" />
-                                  Sıfırla
-                                </button>
-                              </div>
-                              
-                              <div className="relative">
-                                <textarea
-                                  value={answers[index] || ''}
-                                  onChange={(e) => {
-                                    const newAnswers = [...answers];
-                                    newAnswers[index] = e.target.value;
-                                    setAnswers(newAnswers);
-                                  }}
-                                  placeholder="Promptunuzu buraya yazın..."
-                                  className="w-full h-40 p-4 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:border-[#4285F4] focus:ring-2 focus:ring-[#4285F4]/20 transition-all"
-                                />
-                                <div className="absolute bottom-4 right-4 text-sm text-gray-400">
-                                  {(answers[index] || '').length} karakter
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Submit Button */}
-                    <div className="flex justify-end">
-                      <button
-                        onClick={handleSubmit}
-                        disabled={answers.filter(Boolean).length < 3}
-                        className={`px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
-                          answers.filter(Boolean).length === 3
-                            ? 'bg-gradient-to-r from-[#4285F4] to-[#34A853] text-white hover:opacity-90'
-                            : 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
-                        }`}
-                      >
-                        Testi Tamamla
-                      </button>
+                    
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                      {currentQuestion.question}
+                    </h3>
+                    <div className="mt-4 bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                      <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                        Görev
+                      </h4>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {currentQuestion.task}
+                      </p>
                     </div>
                   </div>
-                ) : (
-                  /* Results Section */
-                  <div className="space-y-6">
-                    <div className="bg-gradient-to-br from-[#4285F4]/10 to-transparent rounded-xl p-6 border-2 border-[#4285F4]">
-                      <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                          Test Sonucu
-                        </h3>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-gray-600 dark:text-gray-400">
-                            Genel Başarı:
-                          </span>
-                          <span className="text-lg font-semibold text-transparent bg-clip-text bg-gradient-to-r from-[#4285F4] to-[#34A853]">
-                            {feedback?.overallScore}%
-                          </span>
-                        </div>
-                      </div>
 
-                      <div className="mb-8">
-                        <div className="flex items-center gap-3 mb-3">
-                          <RocketLaunchIcon className="w-6 h-6 text-[#4285F4]" />
-                          <span className="font-medium text-gray-900 dark:text-gray-100">
-                            Önerilen Başlangıç Seviyesi: {feedback?.recommendedLevel}
-                          </span>
-                        </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          Bu seviyeden başlamanızı öneriyoruz. İlerledikçe seviyeniz otomatik olarak artacak.
-                        </p>
-                      </div>
+                  {/* Prompt Input Section */}
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                        Promptunuzu Yazın
+                      </h3>
+                      <button
+                        onClick={() => setShowHints(!showHints)}
+                        className="flex items-center gap-2 text-sm text-[#4285F4] hover:text-[#4285F4]/80"
+                      >
+                        <LightBulbIcon className="w-5 h-5" />
+                        {showHints ? 'İpuçlarını Gizle' : 'İpuçlarını Göster'}
+                      </button>
+                    </div>
 
-                      <div className="space-y-4">
-                        <h4 className="font-medium text-gray-900 dark:text-gray-100">
-                          Detaylı Analiz
+                    {showHints && (
+                      <div className="bg-[#4285F4]/5 rounded-xl p-4 border border-[#4285F4]/20">
+                        <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                          İpuçları
                         </h4>
-                        <div className="space-y-3">
-                          {feedback?.analysis.map((analysis: string, index: number) => (
-                            <div
-                              key={index}
-                              className="flex items-start gap-3 p-3 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700"
-                            >
-                              <CheckCircleIcon className="w-5 h-5 text-[#34A853] flex-shrink-0" />
-                              <span className="text-sm text-gray-700 dark:text-gray-300">{analysis}</span>
-                            </div>
+                        <ul className="list-disc list-inside space-y-1">
+                          {currentQuestion.hints.map((hint, index) => (
+                            <li key={index} className="text-sm text-gray-600 dark:text-gray-400">
+                              {hint}
+                            </li>
                           ))}
-                        </div>
+                        </ul>
                       </div>
+                    )}
+
+                    <div className="relative">
+                      <textarea
+                        value={prompt}
+                        onChange={(e) => setPrompt(e.target.value)}
+                        placeholder="Promptunuzu buraya yazın..."
+                        className="w-full h-40 p-4 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:border-[#4285F4] transition-colors"
+                      />
                     </div>
 
-                    <div className="flex justify-end gap-3">
-                      <button
-                        onClick={closeModal}
-                        className="px-6 py-3 rounded-xl font-medium border-2 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900 transition-all duration-200"
-                      >
-                        İptal
-                      </button>
-                      <button
-                        onClick={handleComplete}
-                        className="px-6 py-3 rounded-xl font-medium bg-gradient-to-r from-[#4285F4] to-[#34A853] text-white hover:opacity-90 transition-all duration-200"
-                      >
-                        Başla
-                      </button>
+                    <div className="flex justify-between items-center pt-4">
+                      <div>
+                        {currentQuestionIndex > 0 && (
+                          <button
+                            onClick={handlePrevious}
+                            className="px-4 py-2 rounded-lg border-2 font-medium flex items-center gap-2 border-[#4285F4] text-[#4285F4] hover:bg-[#4285F4]/5 transition-all duration-300"
+                          >
+                            <ArrowPathIcon className="w-5 h-5 rotate-180" />
+                            Önceki Soru
+                          </button>
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={handleReset}
+                          className="px-4 py-2 rounded-lg border-2 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-900 transition-all duration-300"
+                        >
+                          Sıfırla
+                        </button>
+                        
+                        {currentQuestionIndex < testQuestions.length - 1 ? (
+                          <button
+                            onClick={handleNext}
+                            disabled={!prompt.trim()}
+                            className={`px-6 py-2 rounded-lg font-medium flex items-center gap-2 transition-all duration-300 ${
+                              prompt.trim()
+                                ? 'bg-[#4285F4] text-white hover:bg-[#4285F4]/90 transform hover:scale-105'
+                                : 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                            }`}
+                          >
+                            Sonraki Soru
+                            <ArrowPathIcon className="w-5 h-5" />
+                          </button>
+                        ) : (
+                          <button
+                            onClick={evaluateTest}
+                            disabled={!prompt.trim()}
+                            className="px-6 py-2 rounded-lg font-medium flex items-center gap-2 bg-gradient-to-r from-[#4285F4] to-[#34A853] text-white hover:opacity-90 transform hover:scale-105 transition-all duration-300"
+                          >
+                            Testi Bitir
+                            <SparklesIcon className="w-5 h-5" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
-                )}
+                </div>
               </Dialog.Panel>
             </Transition.Child>
           </div>
