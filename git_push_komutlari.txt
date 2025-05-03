@@ -1,0 +1,20 @@
+# Tek Seferde GitHub'a Push Yapmak İçin Komutlar
+
+# Tüm değişiklikleri ekle, commit at ve push et (tek satırda):
+# promptlearn2 klasörü için:
+git add . && git commit -m "commit mesajınız" && git push origin main
+
+# İlk defa push yapıyorsanız, bu komutları sırasıyla kullanın:
+git remote add origin https://github.com/mehmeterguden/ogrenprompt.git
+git add . && git commit -m "commit mesajınız" && git push origin main
+
+# VEYA ayrı ayrı yazmak isterseniz:
+git add .
+git commit -m "commit mesajınız"
+git push origin main
+
+# NOT: Eğer farklı bir branch'e push yapacaksanız:
+git push origin branch-adi
+
+# NOT: Eğer force push yapmak gerekirse (dikkatli kullanın!):
+git push -f origin main 
