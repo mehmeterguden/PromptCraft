@@ -1,13 +1,31 @@
 import mongoose from 'mongoose';
 
-export interface IUser {
-  username: string;
-  score: number;
-  currentLevel: number;
-  completedLevels: number[];
-}
+const LevelInputSchema = new mongoose.Schema({
+  level: {
+    type: Number,
+    required: true
+  },
+  userInput: {
+    type: String,
+    required: true
+  },
+  score: {
+    type: Number,
+    min: 0,
+    max: 100,
+    default: null
+  },
+  feedback: {
+    type: String,
+    default: null
+  },
+  suggestions: {
+    type: [String],
+    default: []
+  }
+}, { _id: false });
 
-const UserSchema = new mongoose.Schema<IUser>({
+const UserSchema = new mongoose.Schema({
   username: { 
     type: String, 
     required: [true, 'Kullanıcı adı zorunludur'],
@@ -27,9 +45,34 @@ const UserSchema = new mongoose.Schema<IUser>({
   completedLevels: {
     type: [Number],
     default: []
+  },
+  levelInputs: {
+    type: [LevelInputSchema],
+    default: []
   }
 });
 
-// Model zaten varsa onu kullan, yoksa yeni model oluştur
+// Yeni bir kullanıcı oluşturulduğunda levelInputs'u başlat
+UserSchema.pre('save', function(next) {
+  if (!this.levelInputs) {
+    this.levelInputs = new mongoose.Types.DocumentArray([]);
+  }
+  next();
+});
+
+export interface IUser extends mongoose.Document {
+  username: string;
+  score: number;
+  currentLevel: number;
+  completedLevels: number[];
+  levelInputs: Array<{
+    level: number;
+    userInput: string;
+    score?: number;
+    feedback?: string;
+    suggestions?: string[];
+  }>;
+}
+
 const User = mongoose.models.User || mongoose.model<IUser>('User', UserSchema);
 export default User; 

@@ -1,40 +1,39 @@
-import { NextResponse } from 'next/server';
-import connectToDatabase from '@/app/lib/mongodb';
+import { NextRequest, NextResponse } from 'next/server';
+import connectDB from '@/app/lib/mongodb';
 import User from '@/app/models/User';
 
-export async function POST(req: Request) {
+export async function POST(request: NextRequest) {
   try {
-    await connectToDatabase();
-    const { username } = await req.json();
+    await connectDB();
+    
+    const body = await request.json();
+    const { username } = body;
 
-    // Kullanıcı adı kontrolü
-    const existingUser = await User.findOne({ username });
-    if (existingUser) {
+    if (!username) {
       return NextResponse.json(
-        { error: 'Bu kullanıcı adı zaten kullanımda' },
+        { error: 'Username is required' },
         { status: 400 }
       );
     }
 
-    // Yeni kullanıcı oluştur
-    const user = await User.create({
+    // Create new user
+    const user = new User({
       username,
-      score: 0,
       currentLevel: 1,
-      completedLevels: []
+      completedLevels: [1], // Test için level 1'i tamamlanmış olarak işaretliyoruz
+      levelInputs: []
     });
 
-    // Kullanıcı bilgilerini döndür
+    await user.save();
+
     return NextResponse.json({
-      username: user.username,
-      score: user.score,
-      currentLevel: user.currentLevel,
-      completedLevels: user.completedLevels
+      message: 'User created successfully',
+      user
     });
   } catch (error) {
-    console.error('User creation error:', error);
+    console.error('Error creating user:', error);
     return NextResponse.json(
-      { error: 'Kullanıcı oluşturulurken bir hata oluştu' },
+      { error: 'Failed to create user' },
       { status: 500 }
     );
   }
@@ -42,7 +41,7 @@ export async function POST(req: Request) {
 
 export async function GET(req: Request) {
   try {
-    await connectToDatabase();
+    await connectDB();
     const { searchParams } = new URL(req.url);
     const username = searchParams.get('username');
 

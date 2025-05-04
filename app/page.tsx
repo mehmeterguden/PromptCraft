@@ -1,12 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { LockClosedIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { LockClosedIcon, ExclamationTriangleIcon, ChevronDownIcon, ChevronUpIcon, LightBulbIcon, SparklesIcon } from '@heroicons/react/24/outline';
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
-import { ChatBubbleLeftRightIcon, LightBulbIcon, CheckCircleIcon, XCircleIcon, SparklesIcon, BeakerIcon, RocketLaunchIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import { ChatBubbleLeftRightIcon, CheckCircleIcon, XCircleIcon, BeakerIcon, RocketLaunchIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { testQuestions, levelQuestions } from './data/questions';
 import type { TestQuestion, LevelQuestion } from './types/questions';
+import PromptEditor from './components/PromptEditor';
+import { toast } from 'react-hot-toast';
 
 interface Level {
   number: number;
@@ -31,40 +33,166 @@ interface SelfTestModalProps {
 
 // Level Modal Component
 const LevelModal = ({ isOpen, closeModal, level, currentLevel }: LevelModalProps) => {
-  const [prompt, setPrompt] = useState('');
+  const [userInput, setUserInput] = useState('');
   const [showHints, setShowHints] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [showPromptEditor, setShowPromptEditor] = useState(false);
   const [feedback, setFeedback] = useState<{
     success: boolean;
     message: string;
     suggestions?: string[];
   } | null>(null);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  // Modal açıldığında veya level değiştiğinde state'i sıfırla
+  useEffect(() => {
+    if (isOpen) {
+      // State'i sıfırla
+      setUserInput('');
+      setShowHints(false);
+      setIsSubmitted(false);
+      setFeedback(null);
+      setShowSuggestions(false);
+      
+      // Eğer level varsa, input değerini getir
+      if (level) {
+        fetchLevelInput();
+      }
+    }
+  }, [isOpen, level]); // isOpen ve level değiştiğinde tetiklenecek
+
+  const fetchLevelInput = async () => {
+    try {
+      const savedUser = localStorage.getItem('user');
+      if (!savedUser || !level) return;
+
+      const userData = JSON.parse(savedUser);
+      const username = userData.username;
+      console.log('Fetching input for level:', level.number);
+
+      const response = await fetch(`/api/prompts?username=${username}&level=${level.number}`);
+      const data = await response.json();
+      console.log('Fetched level input:', data);
+
+      if (response.ok) {
+        if (data.levelInput) {
+          setUserInput(data.levelInput.userInput || '');
+          if (data.levelInput.evaluation) {
+            setFeedback({
+              success: data.levelInput.evaluation.score >= 70,
+              message: data.levelInput.evaluation.feedback,
+              suggestions: data.levelInput.evaluation.suggestions
+            });
+          }
+          setIsSubmitted(!!data.levelInput.userInput);
+        } else {
+          // Eğer seviye için input yoksa, alanları sıfırla
+          setUserInput('');
+          setFeedback(null);
+          setIsSubmitted(false);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching level input:', error);
+      // Hata durumunda da alanları sıfırla
+      setUserInput('');
+      setFeedback(null);
+      setIsSubmitted(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    console.log('handleSubmit called');
+    if (!userInput.trim()) {
+      console.log('userInput is empty');
+      return;
+    }
+
+    try {
+      const savedUser = localStorage.getItem('user');
+      if (!savedUser || !level) {
+        console.log('savedUser or level is missing');
+        return;
+      }
+
+      const userData = JSON.parse(savedUser);
+      const username = userData.username;
+      console.log('username from userData:', username);
+      console.log('current level:', level?.number);
+
+      console.log('Sending request to API...');
+      const response = await fetch('/api/prompts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username,
+          level: level.number,
+          userInput: userInput.trim()
+        }),
+      });
+
+      console.log('API response status:', response.status);
+      const responseData = await response.json();
+      console.log('API response data:', responseData);
+
+      if (!response.ok) {
+        toast.error('Prompt kaydedilemedi!');
+        throw new Error('Prompt kaydedilemedi');
+      }
+
+      if (responseData.levelInput && responseData.levelInput.evaluation) {
+        setFeedback({
+          success: responseData.levelInput.evaluation.score >= 70,
+          message: responseData.levelInput.evaluation.feedback,
+          suggestions: responseData.levelInput.evaluation.suggestions
+        });
+      }
+
+      toast.success('Prompt başarıyla kaydedildi!');
+      setIsSubmitted(true);
+
+    } catch (error) {
+      console.error('Error saving prompt:', error);
+      toast.error('Prompt kaydedilirken bir hata oluştu!');
+    }
+  };
+
+  const handleReset = async () => {
+    try {
+      const savedUser = localStorage.getItem('user');
+      if (!savedUser || !level) return;
+
+      const userData = JSON.parse(savedUser);
+      const username = userData.username;
+
+      // Prompt'u databaseden sil
+      const response = await fetch(`/api/prompts?username=${username}&level=${level.number}`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) {
+        throw new Error('Prompt silinemedi');
+      }
+
+      // State'i sıfırla
+      setUserInput('');
+      setIsSubmitted(false);
+      setFeedback(null);
+      setShowHints(false);
+      setShowSuggestions(false);
+      toast.success('Prompt başarıyla silindi!');
+    } catch (error) {
+      console.error('Error resetting prompt:', error);
+      toast.error('Prompt silinirken bir hata oluştu!');
+    }
+  };
 
   if (!level) return null;
 
   const isLevelAvailable = level.number <= currentLevel;
   const levelQuestion = levelQuestions.find(q => q.level === level.number);
-
-  const handleSubmit = () => {
-    // Simüle edilmiş değerlendirme - Gerçek implementasyonda Gemini API kullanılacak
-    setIsSubmitted(true);
-    setFeedback({
-      success: false,
-      message: "Promptunuz geliştirilebilir. Aşağıdaki önerileri dikkate alın:",
-      suggestions: [
-        "Daha spesifik talimatlar ekleyin",
-        "Bağlamı daha net belirtin",
-        "İstenen çıktı formatını belirtin"
-      ]
-    });
-  };
-
-  const handleReset = () => {
-    setPrompt('');
-    setIsSubmitted(false);
-    setFeedback(null);
-    setShowHints(false);
-  };
 
   return (
     <Transition appear show={isOpen} as={Fragment}>
@@ -95,11 +223,18 @@ const LevelModal = ({ isOpen, closeModal, level, currentLevel }: LevelModalProps
               <Dialog.Panel className="w-full max-w-4xl transform overflow-hidden rounded-2xl bg-white dark:bg-gray-800 p-6 text-left align-middle shadow-xl transition-all">
                 {/* Header */}
                 <div className="border-b border-gray-200 dark:border-gray-700 pb-4 mb-6">
-                  <Dialog.Title className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                    <span className="flex items-center gap-2">
+                  <Dialog.Title className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
                       <ChatBubbleLeftRightIcon className="w-8 h-8 text-[#4285F4]" />
                       Seviye {level?.number} - {level?.difficulty}
-                    </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <SparklesIcon className="w-6 h-6 text-yellow-500" />
+                      <span className="text-lg font-semibold">
+                        <span className="text-2xl">75</span>
+                        <span className="text-gray-400 dark:text-gray-500">/100</span>
+                      </span>
+                    </div>
                   </Dialog.Title>
                   <p className="mt-2 text-gray-600 dark:text-gray-400">
                     {level?.isCompleted ? 'Bu seviyeyi tamamladınız!' : level?.isCurrent ? 'Şu anki seviyeniz' : isLevelAvailable ? 'Bu seviyeye erişebilirsiniz' : 'Bu seviye henüz kilitli'}
@@ -158,8 +293,8 @@ const LevelModal = ({ isOpen, closeModal, level, currentLevel }: LevelModalProps
 
                       <div className="relative">
                         <textarea
-                          value={prompt}
-                          onChange={(e) => setPrompt(e.target.value)}
+                          value={userInput}
+                          onChange={(e) => setUserInput(e.target.value)}
                           placeholder="Promptunuzu buraya yazın..."
                           className="w-full h-40 p-4 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:border-[#4285F4] transition-colors"
                         />
@@ -173,16 +308,79 @@ const LevelModal = ({ isOpen, closeModal, level, currentLevel }: LevelModalProps
                           Sıfırla
                         </button>
                         <button
-                          onClick={handleSubmit}
-                          disabled={!prompt.trim()}
+                          onClick={() => {
+                            console.log('Submit button clicked');
+                            handleSubmit();
+                          }}
+                          disabled={!userInput.trim()}
                           className={`px-6 py-2 rounded-lg font-medium ${
-                            prompt.trim()
+                            userInput.trim()
                               ? 'bg-[#4285F4] text-white hover:bg-[#4285F4]/90'
                               : 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
                           }`}
                         >
-                          Gönder
+                          {isSubmitted ? 'Güncelle' : 'Gönder'}
                         </button>
+                      </div>
+
+                      {/* Feedback Section */}
+                      <div className="mt-8 space-y-6">
+                        <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+                            <ChatBubbleLeftRightIcon className="w-5 h-5 text-[#4285F4]" />
+                            Feedback
+                          </h3>
+                          <p className="text-gray-700 dark:text-gray-300">
+                            Promptunuz açık ve net bir şekilde yazılmış. Görevin gereksinimlerini karşılıyor ve istenen çıktıyı üretmek için gerekli tüm bilgileri içeriyor.
+                          </p>
+                        </div>
+
+                        {/* Suggestions Section */}
+                        <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+                          <div 
+                            className="flex items-center justify-between cursor-pointer"
+                            onClick={() => setShowSuggestions(!showSuggestions)}
+                          >
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                              <LightBulbIcon className="w-5 h-5 text-yellow-500" />
+                              Öneriler
+                            </h3>
+                            <button className="text-sm text-[#4285F4] hover:text-[#4285F4]/80 flex items-center gap-1">
+                              {showSuggestions ? (
+                                <>
+                                  <ChevronUpIcon className="w-5 h-5" />
+                                  Gizle
+                                </>
+                              ) : (
+                                <>
+                                  <ChevronDownIcon className="w-5 h-5" />
+                                  Göster
+                                </>
+                              )}
+                            </button>
+                          </div>
+                          
+                          {showSuggestions && (
+                            <ul className="space-y-3 mt-4">
+                              <li className="flex items-start gap-2">
+                                <div className="mt-1.5">
+                                  <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full"></div>
+                                </div>
+                                <p className="text-gray-700 dark:text-gray-300">
+                                  Daha spesifik talimatlar ekleyerek promptunuzu geliştirebilirsiniz.
+                                </p>
+                              </li>
+                              <li className="flex items-start gap-2">
+                                <div className="mt-1.5">
+                                  <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full"></div>
+                                </div>
+                                <p className="text-gray-700 dark:text-gray-300">
+                                  Çıktı formatını daha net belirterek daha tutarlı sonuçlar alabilirsiniz.
+                                </p>
+                              </li>
+                            </ul>
+                          )}
+                        </div>
                       </div>
                     </div>
 
@@ -679,6 +877,7 @@ export default function Home() {
   const [isLengthValid, setIsLengthValid] = useState<boolean | null>(null);
   const [hasTurkishChars, setHasTurkishChars] = useState<boolean>(false);
   const [hasInvalidChars, setHasInvalidChars] = useState<boolean>(false);
+  const [showPromptEditor, setShowPromptEditor] = useState(false);
 
   const handleUsernameChange = async (value: string) => {
     setUsername(value);
@@ -1367,8 +1566,8 @@ export default function Home() {
 
       {/* Modals */}
       <LevelModal
-        isOpen={isLevelModalOpen}
-        closeModal={() => setIsLevelModalOpen(false)}
+        isOpen={selectedLevel !== null}
+        closeModal={() => setSelectedLevel(null)}
         level={selectedLevel}
         currentLevel={currentLevel}
       />
@@ -1378,6 +1577,15 @@ export default function Home() {
         closeModal={() => setIsTestModalOpen(false)}
         onComplete={handleTestComplete}
       />
+
+      {selectedLevel && (
+        <PromptEditor
+          username={username || ''}
+          level={selectedLevel.number}
+          isOpen={showPromptEditor}
+          onClose={() => setShowPromptEditor(false)}
+        />
+      )}
     </main>
     </>
   );
