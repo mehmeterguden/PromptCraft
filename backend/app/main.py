@@ -1,20 +1,24 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.routes import router as api_router
+from .routes import auth
 
-app = FastAPI(title="PromptCraft API")
+app = FastAPI(title="PromptLearn Auth API")
 
 # CORS ayarları
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:3000"],  # Next.js frontend'in adresi
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# API rotalarını ekle
-app.include_router(api_router, prefix="/api")
+# Route'ları ekle
+app.include_router(auth.router, prefix="/auth", tags=["authentication"])
+
+@app.get("/")
+async def root():
+    return {"message": "PromptLearn Auth API is running"}
 
 if __name__ == "__main__":
     import uvicorn

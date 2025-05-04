@@ -672,36 +672,172 @@ export default function Home() {
   const [isTestModalOpen, setIsTestModalOpen] = useState(false);
   const [hasStarted, setHasStarted] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [username, setUsername] = useState('');
+  const [userData, setUserData] = useState<any>(null);
+  const [isUsernameValid, setIsUsernameValid] = useState<boolean | null>(null);
+  const [isUsernameAvailable, setIsUsernameAvailable] = useState<boolean | null>(null);
 
-  // İlk yükleme ve localStorage kontrolü
-  useEffect(() => {
-    const savedHasStarted = localStorage.getItem('hasStarted') === 'true';
-    const savedLevels = localStorage.getItem('levels');
+  // Kullanıcı adı değişikliğini kontrol eden fonksiyon
+  const handleUsernameChange = async (value: string) => {
+    setUsername(value);
     
-    if (savedLevels) {
-      const parsedLevels = JSON.parse(savedLevels);
-      const savedCurrentLevel = parseInt(localStorage.getItem('currentLevel') || '1');
-      
-      setLevels(parsedLevels.map((level: Level) => ({
-        ...level,
-        isLocked: level.number > savedCurrentLevel, // Mevcut seviyeye kadar olan tüm seviyeleri aç
-        isCurrent: level.number === savedCurrentLevel,
-        isCompleted: level.number < savedCurrentLevel // Önceki seviyeleri tamamlanmış olarak işaretle
-      })));
-      
-      setCurrentLevel(savedCurrentLevel);
+    // Kullanıcı adı validasyonu (en az 3 karakter, sadece harf ve rakam)
+    const isValid = value.length >= 3 && /^[a-zA-Z0-9]+$/.test(value);
+    setIsUsernameValid(isValid);
+    
+    if (isValid) {
+      try {
+        const response = await fetch(`/api/users?username=${encodeURIComponent(value)}`);
+        const data = await response.json();
+        setIsUsernameAvailable(!data.exists);
+      } catch (error) {
+        console.error('Kullanıcı adı kontrolü sırasında hata:', error);
+        setIsUsernameAvailable(false);
+      }
     } else {
-      setLevels(prev => prev.map(level => ({
-        ...level,
-        isLocked: level.number !== 1,
-        isCurrent: level.number === 1,
-        isCompleted: false
-      })));
+      setIsUsernameAvailable(null);
     }
-    
-    setHasStarted(savedHasStarted);
-    setIsLoading(false);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    setUsername('');
+    setUserData(null);
+    setHasStarted(false);
+    setCurrentLevel(1);
+    setLevels(prevLevels =>
+      prevLevels.map(l => ({
+        ...l,
+        isLocked: true,
+        isCompleted: false,
+        isCurrent: false
+      }))
+    );
+  };
+
+  useEffect(() => {
+    const init = async () => {
+      const savedUser = localStorage.getItem('user');
+      if (savedUser) {
+        try {
+          const userData = JSON.parse(savedUser);
+          setUsername(userData.username);
+          
+          const response = await fetch(`/api/users?username=${encodeURIComponent(userData.username)}`);
+          const data = await response.json();
+          
+          if (data.exists && data.user) {
+            setUserData(data.user);
+            setHasStarted(true);
+            setCurrentLevel(data.user.currentLevel || 1);
+            
+            // Seviyeleri güncelle
+            setLevels(prevLevels =>
+              prevLevels.map(l => ({
+                ...l,
+                isLocked: l.number > (data.user.currentLevel || 1),
+                isCurrent: l.number === (data.user.currentLevel || 1),
+                isCompleted: l.number < (data.user.currentLevel || 1)
+              }))
+            );
+          } else {
+            handleLogout();
+          }
+        } catch (error) {
+          console.error('Kullanıcı bilgileri alınamadı:', error);
+          handleLogout();
+        }
+      } else {
+        setHasStarted(false);
+      }
+      setIsLoading(false);
+    };
+
+    init();
   }, []);
+
+  const handleTestComplete = async (level: number) => {
+    try {
+      // Test sonucunu API'ye gönder
+      const testResultResponse = await fetch('/api/users/test-result', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username,
+          testScore: level / 30, // Seviyeyi 0-1 aralığına çevir
+          calculatedLevel: level
+        })
+      });
+
+      if (!testResultResponse.ok) {
+        throw new Error('Test sonucu kaydetme hatası');
+      }
+
+      const userData = await testResultResponse.json();
+      
+      // Local storage'a kullanıcı bilgilerini kaydet
+      localStorage.setItem('user', JSON.stringify(userData.user));
+      
+      setCurrentLevel(level);
+      setHasStarted(true);
+      setUserData(userData.user);
+      
+      // Seviyeleri güncelle
+      setLevels(prevLevels =>
+        prevLevels.map(l => ({
+          ...l,
+          isLocked: l.number > level,
+          isCurrent: l.number === level,
+          isCompleted: l.number < level
+        }))
+      );
+      
+      setIsTestModalOpen(false);
+    } catch (error) {
+      console.error('Test tamamlama sırasında hata:', error);
+      alert('Bir hata oluştu. Lütfen tekrar deneyin.');
+    }
+  };
+
+  const handleStartFromLevel1 = async () => {
+    try {
+      // Kullanıcıyı oluştur
+      const createResponse = await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username })
+      });
+
+      if (!createResponse.ok) {
+        throw new Error('Kullanıcı oluşturma hatası');
+      }
+
+      const userData = await createResponse.json();
+      
+      // Local storage'a kullanıcı bilgilerini kaydet
+      localStorage.setItem('user', JSON.stringify(userData));
+      
+      setCurrentLevel(1);
+      setHasStarted(true);
+      setUserData(userData);
+      
+      setLevels(prevLevels =>
+        prevLevels.map(l => ({
+          ...l,
+          isLocked: l.number !== 1,
+          isCurrent: l.number === 1,
+          isCompleted: false
+        }))
+      );
+
+      // Seviye 1'i seç ve modalı aç
+      setSelectedLevel(levels[0]);
+      setIsLevelModalOpen(true);
+    } catch (error) {
+      console.error('Seviye 1 başlatma sırasında hata:', error);
+      alert('Bir hata oluştu. Lütfen tekrar deneyin.');
+    }
+  };
 
   // localStorage'a kaydetme
   useEffect(() => {
@@ -728,36 +864,6 @@ export default function Home() {
     setIsLevelModalOpen(true);
   };
 
-  const handleTestComplete = (level: number) => {
-    setCurrentLevel(level);
-    setHasStarted(true);
-    setLevels(prevLevels =>
-      prevLevels.map(l => ({
-        ...l,
-        isLocked: l.number > level,
-        isCurrent: l.number === level,
-        isCompleted: l.number < level // Önceki seviyeleri tamamlanmış olarak işaretle
-      }))
-    );
-    setIsTestModalOpen(false);
-  };
-
-  const handleStartFromLevel1 = () => {
-    setCurrentLevel(1);
-    setHasStarted(true);
-    setLevels(prevLevels =>
-      prevLevels.map(l => ({
-        ...l,
-        isLocked: l.number !== 1,
-        isCurrent: l.number === 1,
-        isCompleted: false
-      }))
-    );
-    // Seviye 1'i seç ve modalı aç
-    setSelectedLevel(levels[0]);
-    setIsLevelModalOpen(true);
-  };
-
   // Loading durumunda boş ekran göster
   if (isLoading) {
     return null;
@@ -767,9 +873,9 @@ export default function Home() {
   if (hasStarted === false || hasStarted === null) {
     return (
       <main className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col items-center justify-center p-8">
-        <div className="max-w-4xl w-full space-y-16 text-center">
+        <div className="max-w-4xl w-full space-y-16">
           {/* Header */}
-          <div className="space-y-6">
+          <div className="space-y-6 text-center">
             <h1 className="text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#4285F4] to-[#34A853]">
               Prompt Mühendisliği
               <span className="text-4xl font-medium mt-4 block text-gray-600 dark:text-gray-300">
@@ -781,19 +887,78 @@ export default function Home() {
             </p>
           </div>
 
+          {/* Username Input Section */}
+          <div className="max-w-md mx-auto w-full space-y-4">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-200">
+                Kullanıcı Adınızı Girin
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400 mt-2">
+                Öğrenme yolculuğunuza başlamak için bir kullanıcı adı seçin
+              </p>
+            </div>
+            
+            <div className="relative">
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => handleUsernameChange(e.target.value)}
+                placeholder="Kullanıcı adınız..."
+                className={`w-full px-4 py-3 rounded-xl border-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 
+                  placeholder-gray-400 transition-all duration-300 focus:outline-none
+                  ${isUsernameValid === false ? 'border-red-500 focus:border-red-600' :
+                    isUsernameValid === true ? 'border-green-500 focus:border-green-600' :
+                    'border-gray-200 dark:border-gray-700 focus:border-[#4285F4]'}`}
+              />
+              
+              {/* Validation Icon */}
+              {username && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  {isUsernameValid && isUsernameAvailable ? (
+                    <CheckCircleIcon className="w-6 h-6 text-green-500" />
+                  ) : (
+                    <XCircleIcon className="w-6 h-6 text-red-500" />
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Validation Messages */}
+            <div className="min-h-[1.5rem] text-sm">
+              {username && !isUsernameValid && (
+                <p className="text-red-500">
+                  Kullanıcı adı en az 3 karakter olmalı ve sadece harf ve rakam içermelidir.
+                </p>
+              )}
+              {isUsernameValid === false && isUsernameAvailable === false && (
+                <p className="text-red-500">
+                  Bu kullanıcı adı zaten kullanımda.
+                </p>
+              )}
+            </div>
+          </div>
+
           {/* Action Buttons */}
-          <div className="flex flex-col items-center gap-6">
+          <div className="flex justify-center gap-8">
             <button
               onClick={() => setIsTestModalOpen(true)}
-              className="px-8 py-4 bg-gradient-to-r from-[#4285F4] to-[#34A853] rounded-xl text-white font-medium text-lg hover:opacity-90 transition-all duration-300 hover:shadow-lg hover:shadow-[#4285F4]/20 flex items-center gap-3"
+              disabled={!isUsernameValid || !isUsernameAvailable}
+              className={`px-8 py-4 rounded-xl text-lg transition-all duration-300 flex items-center gap-3
+                ${isUsernameValid && isUsernameAvailable
+                  ? 'bg-gradient-to-r from-[#4285F4] to-[#34A853] text-white font-medium hover:opacity-90 hover:shadow-lg hover:shadow-[#4285F4]/20'
+                  : 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'}`}
             >
               <SparklesIcon className="w-6 h-6" />
               Kendini Test Et
             </button>
-            <span className="text-gray-500 dark:text-gray-400">veya</span>
+
             <button
               onClick={handleStartFromLevel1}
-              className="px-8 py-4 border-2 border-[#4285F4] rounded-xl text-[#4285F4] font-medium text-lg hover:bg-[#4285F4]/5 transition-all duration-300 flex items-center gap-3"
+              disabled={!isUsernameValid || !isUsernameAvailable}
+              className={`px-8 py-4 rounded-xl text-lg transition-all duration-300 flex items-center gap-3
+                ${isUsernameValid && isUsernameAvailable
+                  ? 'border-2 border-[#4285F4] text-[#4285F4] font-medium hover:bg-[#4285F4]/5'
+                  : 'border-2 border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'}`}
             >
               <RocketLaunchIcon className="w-6 h-6" />
               Seviye 1'den Başla
@@ -828,143 +993,164 @@ export default function Home() {
 
   // Kullanıcı başlamışsa seviye ekranını göster
   return (
-    <main className="min-h-screen bg-gray-50 dark:bg-gray-900 p-8">
-      {/* Progress ve Test Butonu */}
-      <div className="fixed top-6 right-6 bg-white/90 backdrop-blur-sm dark:bg-gray-800/90 rounded-xl shadow-lg p-4 z-40">
-        <div className="text-gray-800 dark:text-gray-100">
-          <div className="flex items-center gap-2 mb-3">
-            <RocketLaunchIcon className="w-5 h-5 text-[#4285F4]" />
-            <p className="text-sm font-medium">Mevcut Seviye: <span className="text-[#4285F4] font-bold">{currentLevel}</span><span className="text-gray-400 dark:text-gray-500">/30</span></p>
-          </div>
-          <div className="relative mb-8">
-            <div className="h-2.5 w-40 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden grid grid-cols-30 gap-px">
-              {Array.from({ length: 30 }, (_, i) => (
-                <div 
-                  key={i} 
-                  className={`h-full ${i < currentLevel ? 'bg-gradient-to-r from-[#4285F4] to-[#34A853]' : ''}`}
-                />
-              ))}
+    <>
+      <div className="absolute top-4 left-4 text-white z-50 space-y-2">
+        {userData ? (
+          <>
+            <div className="space-y-1">
+              <div className="text-lg">{userData.username}</div>
+              <div className="text-sm opacity-80">Seviye: {userData.currentLevel || 1}</div>
+              <div className="text-sm opacity-80">Skor: {userData.score || 0}</div>
             </div>
-            <div className="absolute -bottom-5 left-0 right-0 flex justify-between items-center">
-              <p className="text-xs font-medium text-[#4285F4]">
-                Seviye {currentLevel}
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                30 Seviye
-              </p>
-            </div>
-          </div>
-        </div>
-        
-        {/* Her zaman görünür test butonu */}
-        <button 
-          onClick={() => setIsTestModalOpen(true)}
-          className="w-full px-4 py-2.5 bg-gradient-to-r from-[#4285F4] to-[#34A853] rounded-lg text-white font-medium text-sm hover:opacity-90 transition-all duration-300 hover:shadow-lg hover:shadow-[#4285F4]/20"
-        >
-          Kendini Test Et
-        </button>
+            <button
+              onClick={handleLogout}
+              className="px-3 py-1 bg-red-500 hover:bg-red-600 rounded text-sm transition-colors"
+            >
+              Çıkış Yap
+            </button>
+          </>
+        ) : (
+          username
+        )}
       </div>
-
-      {/* Header */}
-      <div className="text-center mb-24">
-        <h1 className="text-6xl font-bold mb-12 text-transparent bg-clip-text bg-gradient-to-r from-[#4285F4] to-[#34A853]">
-          Prompt Mühendisliği
-          <span className="text-4xl font-medium mt-2 block text-gray-600 dark:text-gray-300">
-            Öğrenme Platformu
-          </span>
-        </h1>
-      </div>
-
-      {/* Difficulty Sections */}
-      <div className="max-w-[1400px] mx-auto space-y-16">
-        {['Kolay', 'Orta', 'Zor'].map((difficulty) => (
-          <div key={difficulty} className="relative">
-            <div className="flex items-center mb-8">
-              <h2 className="text-2xl font-bold" style={{ color: getDifficultyColor(difficulty) }}>
-                {difficulty} Seviyeler
-              </h2>
-              <div className="flex-1 h-px ml-6" style={{ 
-                background: `linear-gradient(to right, ${getDifficultyColor(difficulty)}40, transparent)` 
-              }} />
+      <main className="min-h-screen bg-gray-50 dark:bg-gray-900 p-8">
+        {/* Progress ve Test Butonu */}
+        <div className="fixed top-6 right-6 bg-white/90 backdrop-blur-sm dark:bg-gray-800/90 rounded-xl shadow-lg p-4 z-40">
+          <div className="text-gray-800 dark:text-gray-100">
+            <div className="flex items-center gap-2 mb-3">
+              <RocketLaunchIcon className="w-5 h-5 text-[#4285F4]" />
+              <p className="text-sm font-medium">Mevcut Seviye: <span className="text-[#4285F4] font-bold">{currentLevel}</span><span className="text-gray-400 dark:text-gray-500">/30</span></p>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              {levels
-                .filter(level => level.difficulty === difficulty)
-                .map((level, index) => (
+            <div className="relative mb-8">
+              <div className="h-2.5 w-40 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden grid grid-cols-30 gap-px">
+                {Array.from({ length: 30 }, (_, i) => (
                   <div 
-                    key={level.number} 
-                    className="relative group cursor-pointer transform transition-all duration-300 hover:scale-105"
-                    onClick={() => handleLevelClick(level)}
-                  >
-                    <div className={`
-                      relative p-6 rounded-xl border-4 transition-all duration-300 overflow-hidden
-                      ${level.isCurrent 
-                        ? 'border-[#34A853] bg-[#34A853]/5 shadow-xl shadow-[#34A853]/20' 
-                        : level.isLocked
-                        ? 'border-opacity-40 bg-opacity-5 border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800'
-                        : level.isCompleted
-                        ? `border-[${getDifficultyColor(difficulty)}] bg-[${getDifficultyColor(difficulty)}]/5 hover:shadow-lg`
-                        : `border-[${getDifficultyColor(difficulty)}] bg-[${getDifficultyColor(difficulty)}]/5 hover:shadow-lg`
-                      }
-                      ${!level.isLocked && 'hover:shadow-xl hover:shadow-[#4285F4]/20'}
-                    `}
-                    style={{
-                      borderColor: level.isCurrent ? '#34A853' : level.isLocked ? undefined : getDifficultyColor(difficulty),
-                      transform: level.isCurrent ? 'scale(1.05)' : undefined
-                    }}>
-                      <div className="text-center relative z-10">
-                        <span className={`block text-2xl font-bold mb-2 ${
-                          level.isLocked 
-                            ? 'text-gray-400 dark:text-gray-500' 
-                            : 'text-gray-800 dark:text-gray-100'
-                        }`}>
-                          Seviye {level.number}
-                        </span>
-                        <p className="font-medium" style={{ 
-                          color: `${getDifficultyColor(difficulty)}${level.isLocked ? '40' : '90'}`
-                        }}>
-                          {difficulty}
-                        </p>
-                      </div>
-
-                      {level.isLocked && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-white/60 dark:bg-gray-900/60 backdrop-blur-[2px]">
-                          <div className="bg-gray-100/80 dark:bg-gray-800/80 p-3 rounded-full">
-                            <LockClosedIcon className="w-6 h-6 text-gray-400 dark:text-gray-500" />
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Connection Line */}
-                      {index < 9 && (
-                        <div className="absolute -right-4 top-1/2 transform -translate-y-1/2 w-4 h-[2px]"
-                          style={{
-                            backgroundColor: getDifficultyColor(difficulty),
-                            opacity: level.isLocked ? 0.2 : 0.4
-                          }}
-                        />
-                      )}
-                    </div>
-                  </div>
+                    key={i} 
+                    className={`h-full ${i < currentLevel ? 'bg-gradient-to-r from-[#4285F4] to-[#34A853]' : ''}`}
+                  />
                 ))}
+              </div>
+              <div className="absolute -bottom-5 left-0 right-0 flex justify-between items-center">
+                <p className="text-xs font-medium text-[#4285F4]">
+                  Seviye {currentLevel}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  30 Seviye
+                </p>
+              </div>
             </div>
           </div>
-        ))}
-      </div>
+          
+          {/* Her zaman görünür test butonu */}
+          <button 
+            onClick={() => setIsTestModalOpen(true)}
+            className="w-full px-4 py-2.5 bg-gradient-to-r from-[#4285F4] to-[#34A853] rounded-lg text-white font-medium text-sm hover:opacity-90 transition-all duration-300 hover:shadow-lg hover:shadow-[#4285F4]/20"
+          >
+            Kendini Test Et
+          </button>
+        </div>
 
-      {/* Modals */}
-      <LevelModal
-        isOpen={isLevelModalOpen}
-        closeModal={() => setIsLevelModalOpen(false)}
-        level={selectedLevel}
-        currentLevel={currentLevel}
-      />
+        {/* Header */}
+        <div className="text-center mb-24">
+          <h1 className="text-6xl font-bold mb-12 text-transparent bg-clip-text bg-gradient-to-r from-[#4285F4] to-[#34A853]">
+            Prompt Mühendisliği
+            <span className="text-4xl font-medium mt-2 block text-gray-600 dark:text-gray-300">
+              Öğrenme Platformu
+            </span>
+          </h1>
+        </div>
 
-      <SelfTestModal
-        isOpen={isTestModalOpen}
-        closeModal={() => setIsTestModalOpen(false)}
-        onComplete={handleTestComplete}
-      />
-    </main>
+        {/* Difficulty Sections */}
+        <div className="max-w-[1400px] mx-auto space-y-16">
+          {['Kolay', 'Orta', 'Zor'].map((difficulty) => (
+            <div key={difficulty} className="relative">
+              <div className="flex items-center mb-8">
+                <h2 className="text-2xl font-bold" style={{ color: getDifficultyColor(difficulty) }}>
+                  {difficulty} Seviyeler
+                </h2>
+                <div className="flex-1 h-px ml-6" style={{ 
+                  background: `linear-gradient(to right, ${getDifficultyColor(difficulty)}40, transparent)` 
+                }} />
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                {levels
+                  .filter(level => level.difficulty === difficulty)
+                  .map((level, index) => (
+                    <div 
+                      key={level.number} 
+                      className="relative group cursor-pointer transform transition-all duration-300 hover:scale-105"
+                      onClick={() => handleLevelClick(level)}
+                    >
+                      <div className={`
+                        relative p-6 rounded-xl border-4 transition-all duration-300 overflow-hidden
+                        ${level.isCurrent 
+                          ? 'border-[#34A853] bg-[#34A853]/5 shadow-xl shadow-[#34A853]/20' 
+                          : level.isLocked
+                          ? 'border-opacity-40 bg-opacity-5 border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800'
+                          : level.isCompleted
+                          ? `border-[${getDifficultyColor(difficulty)}] bg-[${getDifficultyColor(difficulty)}]/5 hover:shadow-lg`
+                          : `border-[${getDifficultyColor(difficulty)}] bg-[${getDifficultyColor(difficulty)}]/5 hover:shadow-lg`
+                        }
+                        ${!level.isLocked && 'hover:shadow-xl hover:shadow-[#4285F4]/20'}
+                      `}
+                      style={{
+                        borderColor: level.isCurrent ? '#34A853' : level.isLocked ? undefined : getDifficultyColor(difficulty),
+                        transform: level.isCurrent ? 'scale(1.05)' : undefined
+                      }}>
+                        <div className="text-center relative z-10">
+                          <span className={`block text-2xl font-bold mb-2 ${
+                            level.isLocked 
+                              ? 'text-gray-400 dark:text-gray-500' 
+                              : 'text-gray-800 dark:text-gray-100'
+                          }`}>
+                            Seviye {level.number}
+                          </span>
+                          <p className="font-medium" style={{ 
+                            color: `${getDifficultyColor(difficulty)}${level.isLocked ? '40' : '90'}`
+                          }}>
+                            {difficulty}
+                          </p>
+                        </div>
+
+                        {level.isLocked && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-white/60 dark:bg-gray-900/60 backdrop-blur-[2px]">
+                            <div className="bg-gray-100/80 dark:bg-gray-800/80 p-3 rounded-full">
+                              <LockClosedIcon className="w-6 h-6 text-gray-400 dark:text-gray-500" />
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Connection Line */}
+                        {index < 9 && (
+                          <div className="absolute -right-4 top-1/2 transform -translate-y-1/2 w-4 h-[2px]"
+                            style={{
+                              backgroundColor: getDifficultyColor(difficulty),
+                              opacity: level.isLocked ? 0.2 : 0.4
+                            }}
+                          />
+                        )}
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Modals */}
+        <LevelModal
+          isOpen={isLevelModalOpen}
+          closeModal={() => setIsLevelModalOpen(false)}
+          level={selectedLevel}
+          currentLevel={currentLevel}
+        />
+
+        <SelfTestModal
+          isOpen={isTestModalOpen}
+          closeModal={() => setIsTestModalOpen(false)}
+          onComplete={handleTestComplete}
+        />
+      </main>
+    </>
   );
 }
