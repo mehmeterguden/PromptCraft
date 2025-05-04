@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { LockClosedIcon } from '@heroicons/react/24/solid';
+import { LockClosedIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 import { ChatBubbleLeftRightIcon, LightBulbIcon, CheckCircleIcon, XCircleIcon, SparklesIcon, BeakerIcon, RocketLaunchIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
@@ -227,9 +227,9 @@ const LevelModal = ({ isOpen, closeModal, level, currentLevel }: LevelModalProps
                       </div>
                       <div className="space-y-3">
                         <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                          Seviye Yetersiz
-                        </h3>
-                        <p className="text-gray-600 dark:text-gray-400 max-w-md mx-auto">
+                        Seviye Yetersiz
+                      </h3>
+                      <p className="text-gray-600 dark:text-gray-400 max-w-md mx-auto">
                           Bu seviyeye erişmek için önce <span className="font-semibold text-orange-500">{currentLevel}. seviye</span>'yi tamamlamanız gerekiyor.
                           <br/>
                           <span className="inline-block mt-2">
@@ -676,13 +676,32 @@ export default function Home() {
   const [userData, setUserData] = useState<any>(null);
   const [isUsernameValid, setIsUsernameValid] = useState<boolean | null>(null);
   const [isUsernameAvailable, setIsUsernameAvailable] = useState<boolean | null>(null);
+  const [isLengthValid, setIsLengthValid] = useState<boolean | null>(null);
+  const [hasTurkishChars, setHasTurkishChars] = useState<boolean>(false);
+  const [hasInvalidChars, setHasInvalidChars] = useState<boolean>(false);
 
-  // Kullanıcı adı değişikliğini kontrol eden fonksiyon
   const handleUsernameChange = async (value: string) => {
     setUsername(value);
     
-    // Kullanıcı adı validasyonu (en az 3 karakter, sadece harf ve rakam)
-    const isValid = value.length >= 3 && /^[a-zA-Z0-9]+$/.test(value);
+    if (!value.trim()) {
+      setIsUsernameValid(null);
+      setIsUsernameAvailable(null);
+      setIsLengthValid(null);
+      setHasTurkishChars(false);
+      setHasInvalidChars(false);
+      return;
+    }
+
+    // Türkçe karakterleri ve geçersiz karakterleri kontrol et
+    const hasTurkishChars = /[çğıöşüÇĞİÖŞÜ]/.test(value);
+    const hasInvalidChars = /[^a-zA-Z0-9]/.test(value);
+    const isLengthValid = value.length >= 3;
+    
+    setHasTurkishChars(hasTurkishChars);
+    setHasInvalidChars(hasInvalidChars);
+    setIsLengthValid(isLengthValid);
+    
+    const isValid = isLengthValid && !hasTurkishChars && !hasInvalidChars;
     setIsUsernameValid(isValid);
     
     if (isValid) {
@@ -740,7 +759,7 @@ export default function Home() {
                 isCompleted: l.number < (data.user.currentLevel || 1)
               }))
             );
-          } else {
+    } else {
             handleLogout();
           }
         } catch (error) {
@@ -872,116 +891,325 @@ export default function Home() {
   // Kullanıcı daha önce başlamamışsa karşılama ekranını göster
   if (hasStarted === false || hasStarted === null) {
     return (
-      <main className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col items-center justify-center p-8">
+      <main className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 dark:from-gray-900 dark:via-blue-900/10 dark:to-gray-800 flex flex-col items-center justify-center p-8">
         <div className="max-w-4xl w-full space-y-16">
           {/* Header */}
           <div className="space-y-6 text-center">
-            <h1 className="text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#4285F4] to-[#34A853]">
-              Prompt Mühendisliği
-              <span className="text-4xl font-medium mt-4 block text-gray-600 dark:text-gray-300">
-                Öğrenme Platformu
-              </span>
-            </h1>
+            <div className="relative">
+              <div className="absolute -top-24 left-1/2 transform -translate-x-1/2 w-40 h-40 bg-gradient-to-r from-[#4285F4]/20 to-[#34A853]/20 rounded-full blur-3xl" />
+              <h1 className="text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#4285F4] to-[#34A853] relative">
+                Prompt Mühendisliği
+                <span className="text-4xl font-medium mt-4 block text-gray-600 dark:text-gray-300">
+                  Öğrenme Platformu
+                </span>
+              </h1>
+            </div>
             <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
               Yapay zeka ile etkileşimde başarılı olmak için prompt mühendisliği becerilerinizi geliştirin.
             </p>
           </div>
 
-          {/* Username Input Section */}
-          <div className="max-w-md mx-auto w-full space-y-4">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-200">
-                Kullanıcı Adınızı Girin
-              </h2>
-              <p className="text-gray-600 dark:text-gray-400 mt-2">
-                Öğrenme yolculuğunuza başlamak için bir kullanıcı adı seçin
-              </p>
-            </div>
-            
-            <div className="relative">
-              <input
-                type="text"
-                value={username}
-                onChange={(e) => handleUsernameChange(e.target.value)}
-                placeholder="Kullanıcı adınız..."
-                className={`w-full px-4 py-3 rounded-xl border-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 
-                  placeholder-gray-400 transition-all duration-300 focus:outline-none
-                  ${isUsernameValid === false ? 'border-red-500 focus:border-red-600' :
-                    isUsernameValid === true ? 'border-green-500 focus:border-green-600' :
-                    'border-gray-200 dark:border-gray-700 focus:border-[#4285F4]'}`}
-              />
+          {/* Login Card */}
+          <div className="max-w-xl mx-auto w-full">
+            <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-xl p-8 border-2 border-[#4285F4]/20">
+              <div className="text-center mb-8">
+                <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-3">
+                  Kullanıcı Adınızı Girin
+                </h2>
+                <p className="text-gray-600 dark:text-gray-400">
+                  Öğrenme yolculuğunuza başlamak için bir kullanıcı adı seçin
+                </p>
+              </div>
               
-              {/* Validation Icon */}
-              {username && (
-                <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                  {isUsernameValid && isUsernameAvailable ? (
-                    <CheckCircleIcon className="w-6 h-6 text-green-500" />
-                  ) : (
-                    <XCircleIcon className="w-6 h-6 text-red-500" />
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={username}
+                      onChange={(e) => handleUsernameChange(e.target.value)}
+                      placeholder="Kullanıcı adınız..."
+                      className={`w-full px-4 py-3.5 rounded-xl border-2 bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-gray-100 
+                        placeholder-gray-400 transition-all duration-300 focus:outline-none backdrop-blur-sm text-lg
+                        ${isUsernameValid === false ? 'border-red-500 focus:border-red-600' :
+                          isUsernameValid === true && isUsernameAvailable === true ? 'border-green-500 focus:border-green-600' :
+                          'border-gray-200 dark:border-gray-700 focus:border-[#4285F4]'}`}
+                    />
+                    
+                    {/* Validation Icon */}
+                    {username && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        {isUsernameValid && isUsernameAvailable ? (
+                          <CheckCircleIcon className="w-6 h-6 text-green-500" />
+                        ) : (
+                          <XCircleIcon className="w-6 h-6 text-red-500" />
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Validation Messages - Below Input */}
+                  {username && (
+                    <div className="text-sm space-y-1">
+                      {hasTurkishChars && (
+                        <p className="text-amber-500 dark:text-amber-400 flex items-center gap-1.5">
+                          <ExclamationTriangleIcon className="w-4 h-4" />
+                          Türkçe karakter kullanılamaz (ç, ğ, ı, ö, ş, ü)
+                        </p>
+                      )}
+                      {hasInvalidChars && !hasTurkishChars && (
+                        <p className="text-amber-500 dark:text-amber-400 flex items-center gap-1.5">
+                          <ExclamationTriangleIcon className="w-4 h-4" />
+                          Sadece harf ve rakam kullanılabilir
+                        </p>
+                      )}
+                      {isUsernameValid === true && isUsernameAvailable === false && (
+                        <p className="text-amber-500 dark:text-amber-400 flex items-center gap-1.5">
+                          <ExclamationTriangleIcon className="w-4 h-4" />
+                          Bu kullanıcı adı kullanılıyor
+                        </p>
+                      )}
+                    </div>
                   )}
                 </div>
-              )}
-            </div>
 
-            {/* Validation Messages */}
-            <div className="min-h-[1.5rem] text-sm">
-              {username && !isUsernameValid && (
-                <p className="text-red-500">
-                  Kullanıcı adı en az 3 karakter olmalı ve sadece harf ve rakam içermelidir.
-                </p>
-              )}
-              {isUsernameValid === false && isUsernameAvailable === false && (
-                <p className="text-red-500">
-                  Bu kullanıcı adı zaten kullanımda.
-                </p>
-              )}
+                {/* Action Buttons - Changed to row */}
+                <div className="flex gap-4 mt-8">
+                  <button
+                    onClick={() => setIsTestModalOpen(true)}
+                    disabled={!isUsernameValid || !isUsernameAvailable}
+                    className={`flex-1 px-6 py-4 rounded-xl text-base font-medium transition-all duration-300 flex items-center justify-center gap-2
+                      ${isUsernameValid && isUsernameAvailable
+                        ? 'bg-gradient-to-r from-[#4285F4] to-[#34A853] text-white hover:opacity-90 hover:shadow-lg hover:shadow-[#4285F4]/20 transform hover:scale-105'
+                        : 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'}`}
+                  >
+                    <SparklesIcon className="w-5 h-5" />
+                    Kendini Test Et
+                  </button>
+
+                  <button
+                    onClick={handleStartFromLevel1}
+                    disabled={!isUsernameValid || !isUsernameAvailable}
+                    className={`flex-1 px-6 py-4 rounded-xl text-base font-medium transition-all duration-300 flex items-center justify-center gap-2
+                      ${isUsernameValid && isUsernameAvailable
+                        ? 'border-2 border-[#4285F4] text-[#4285F4] hover:bg-[#4285F4]/5 transform hover:scale-105'
+                        : 'border-2 border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'}`}
+                  >
+                    <RocketLaunchIcon className="w-5 h-5" />
+                    Seviye 1 ile Başla
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex justify-center gap-8">
-            <button
-              onClick={() => setIsTestModalOpen(true)}
-              disabled={!isUsernameValid || !isUsernameAvailable}
-              className={`px-8 py-4 rounded-xl text-lg transition-all duration-300 flex items-center gap-3
-                ${isUsernameValid && isUsernameAvailable
-                  ? 'bg-gradient-to-r from-[#4285F4] to-[#34A853] text-white font-medium hover:opacity-90 hover:shadow-lg hover:shadow-[#4285F4]/20'
-                  : 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'}`}
-            >
-              <SparklesIcon className="w-6 h-6" />
-              Kendini Test Et
-            </button>
+          {/* Features Section */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Feature 1 */}
+            <div className="group relative bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-[#4285F4]/20 dark:border-gray-700 transform transition-all duration-300 hover:scale-105 overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-[#4285F4]/10 to-[#34A853]/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="relative">
+                <div className="bg-gradient-to-br from-[#4285F4] to-[#34A853] w-12 h-12 rounded-xl flex items-center justify-center mb-4 transform group-hover:scale-110 transition-transform duration-300">
+                  <SparklesIcon className="w-6 h-6 text-white" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                  Seviye Tabanlı Öğrenme
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400">
+                  30 farklı zorluk seviyesiyle adım adım prompt mühendisliği becerilerinizi geliştirin.
+                </p>
+              </div>
+            </div>
 
-            <button
-              onClick={handleStartFromLevel1}
-              disabled={!isUsernameValid || !isUsernameAvailable}
-              className={`px-8 py-4 rounded-xl text-lg transition-all duration-300 flex items-center gap-3
-                ${isUsernameValid && isUsernameAvailable
-                  ? 'border-2 border-[#4285F4] text-[#4285F4] font-medium hover:bg-[#4285F4]/5'
-                  : 'border-2 border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'}`}
-            >
-              <RocketLaunchIcon className="w-6 h-6" />
-              Seviye 1'den Başla
-            </button>
+            {/* Feature 2 */}
+            <div className="group relative bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-[#FBBC05]/20 dark:border-gray-700 transform transition-all duration-300 hover:scale-105 overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-[#FBBC05]/10 to-[#EA4335]/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="relative">
+                <div className="bg-gradient-to-br from-[#FBBC05] to-[#EA4335] w-12 h-12 rounded-xl flex items-center justify-center mb-4 transform group-hover:scale-110 transition-transform duration-300">
+                  <BeakerIcon className="w-6 h-6 text-white" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                  AI Destekli Değerlendirme
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400">
+                  Yapay zeka ile anında geri bildirim alın ve promptlarınızı iyileştirin.
+                </p>
+              </div>
+            </div>
+
+            {/* Feature 3 */}
+            <div className="group relative bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-[#34A853]/20 dark:border-gray-700 transform transition-all duration-300 hover:scale-105 overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-[#34A853]/10 to-[#4285F4]/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="relative">
+                <div className="bg-gradient-to-br from-[#34A853] to-[#4285F4] w-12 h-12 rounded-xl flex items-center justify-center mb-4 transform group-hover:scale-110 transition-transform duration-300">
+                  <RocketLaunchIcon className="w-6 h-6 text-white" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                  Pratik Odaklı
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400">
+                  Gerçek dünya senaryolarıyla pratik yapın ve deneyim kazanın.
+                </p>
+              </div>
+            </div>
           </div>
 
-          {/* Description */}
-          <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-2xl p-8 max-w-3xl mx-auto">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-              Nasıl Çalışır?
-            </h2>
-            <div className="space-y-4 text-left">
-              <p className="text-gray-600 dark:text-gray-400">
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-              </p>
-              <p className="text-gray-600 dark:text-gray-400">
-                Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-              </p>
+          {/* How It Works Section */}
+          <div className="space-y-12">
+            <div className="relative">
+              <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 w-40 h-40 bg-gradient-to-r from-[#4285F4]/20 to-[#34A853]/20 rounded-full blur-3xl" />
+              <h2 className="text-4xl font-bold text-center text-gray-900 dark:text-gray-100 relative mb-16">
+                Nasıl Çalışır?
+              </h2>
+            </div>
+            
+            <div className="relative space-y-24">
+              {/* Step 1 - Left */}
+              <div className="relative flex items-center">
+                <div className="w-1/4 relative z-10">
+                  <div className="absolute -inset-4 bg-gradient-to-r from-[#4285F4]/20 to-[#34A853]/20 rounded-full blur-xl" />
+                  <div className="relative w-24 h-24 bg-gradient-to-br from-[#4285F4] to-[#34A853] rounded-2xl flex items-center justify-center transform transition-transform duration-300 hover:scale-110 shadow-xl mx-auto">
+                    <SparklesIcon className="w-12 h-12 text-white" />
+                  </div>
+                </div>
+                <div className="w-3/4 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl p-8 shadow-lg border border-[#4285F4]/20 dark:border-gray-700">
+                  <div className="relative">
+                    <div className="absolute -top-6 -left-6">
+                      <div className="w-12 h-12 bg-gradient-to-br from-[#4285F4] to-[#34A853] rounded-xl flex items-center justify-center text-2xl font-bold text-white shadow-lg">
+                        1
+                      </div>
+                    </div>
+                    <div className="ml-8">
+                      <h3 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                        Seviyeni Belirle
+                      </h3>
+                      <div className="space-y-4">
+                        <p className="text-lg text-gray-600 dark:text-gray-400">
+                          İki farklı başlangıç seçeneği ile öğrenme yolculuğuna başla:
+                        </p>
+                        <ul className="space-y-3">
+                          <li className="flex items-start gap-3">
+                            <CheckCircleIcon className="w-6 h-6 text-[#34A853] flex-shrink-0 mt-1" />
+                            <div>
+                              <span className="text-lg font-medium text-[#4285F4] dark:text-[#4285F4] block mb-1">Kendini Test Et</span>
+                              <p className="text-gray-600 dark:text-gray-400">Mevcut prompt mühendisliği seviyeni ölç ve uygun seviyeden başla. AI destekli test sistemi ile seviyeni belirle.</p>
+                            </div>
+                          </li>
+                          <li className="flex items-start gap-3">
+                            <CheckCircleIcon className="w-6 h-6 text-[#34A853] flex-shrink-0 mt-1" />
+                            <div>
+                              <span className="text-lg font-medium text-[#4285F4] dark:text-[#4285F4] block mb-1">Seviye 1 ile Başla</span>
+                              <p className="text-gray-600 dark:text-gray-400">Temelden başlayarak adım adım ilerle. Her seviyede yeni teknikler öğren ve pratik yap.</p>
+                            </div>
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Step 2 - Right */}
+              <div className="relative flex items-center justify-end">
+                <div className="w-3/4 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl p-8 shadow-lg border border-[#FBBC05]/20 dark:border-gray-700">
+                  <div className="relative">
+                    <div className="absolute -top-6 -left-6">
+                      <div className="w-12 h-12 bg-gradient-to-br from-[#FBBC05] to-[#EA4335] rounded-xl flex items-center justify-center text-2xl font-bold text-white shadow-lg">
+                        2
+                      </div>
+                    </div>
+                    <div className="ml-8">
+                      <h3 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                        Öğren ve Uygula
+                      </h3>
+                      <div className="space-y-4">
+                        <p className="text-lg text-gray-600 dark:text-gray-400">
+                          Her seviyede yeni prompt teknikleri öğren ve uygula:
+                        </p>
+                        <ul className="space-y-3">
+                          <li className="flex items-start gap-3">
+                            <CheckCircleIcon className="w-6 h-6 text-[#FBBC05] flex-shrink-0 mt-1" />
+                            <div>
+                              <span className="text-lg font-medium text-[#FBBC05] dark:text-[#FBBC05] block mb-1">Detaylı İpuçları</span>
+                              <p className="text-gray-600 dark:text-gray-400">Her görev için özel hazırlanmış ipuçları ve önerilerle promptlarını geliştir.</p>
+                            </div>
+                          </li>
+                          <li className="flex items-start gap-3">
+                            <CheckCircleIcon className="w-6 h-6 text-[#FBBC05] flex-shrink-0 mt-1" />
+                            <div>
+                              <span className="text-lg font-medium text-[#FBBC05] dark:text-[#FBBC05] block mb-1">Örnek Çözümler</span>
+                              <p className="text-gray-600 dark:text-gray-400">Başarılı prompt örneklerini incele ve kendi promptlarını bu doğrultuda iyileştir.</p>
+                            </div>
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="w-1/4 relative z-10">
+                  <div className="absolute -inset-4 bg-gradient-to-r from-[#FBBC05]/20 to-[#EA4335]/20 rounded-full blur-xl" />
+                  <div className="relative w-24 h-24 bg-gradient-to-br from-[#FBBC05] to-[#EA4335] rounded-2xl flex items-center justify-center transform transition-transform duration-300 hover:scale-110 shadow-xl mx-auto">
+                    <ChatBubbleLeftRightIcon className="w-12 h-12 text-white" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Step 3 - Left */}
+              <div className="relative flex items-center">
+                <div className="w-1/4 relative z-10">
+                  <div className="absolute -inset-4 bg-gradient-to-r from-[#34A853]/20 to-[#4285F4]/20 rounded-full blur-xl" />
+                  <div className="relative w-24 h-24 bg-gradient-to-br from-[#34A853] to-[#4285F4] rounded-2xl flex items-center justify-center transform transition-transform duration-300 hover:scale-110 shadow-xl mx-auto">
+                    <BeakerIcon className="w-12 h-12 text-white" />
+                  </div>
+                </div>
+                <div className="w-3/4 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl p-8 shadow-lg border border-[#34A853]/20 dark:border-gray-700">
+                  <div className="relative">
+                    <div className="absolute -top-6 -left-6">
+                      <div className="w-12 h-12 bg-gradient-to-br from-[#34A853] to-[#4285F4] rounded-xl flex items-center justify-center text-2xl font-bold text-white shadow-lg">
+                        3
+                      </div>
+                    </div>
+                    <div className="ml-8">
+                      <h3 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                        Gelişimini Takip Et
+                      </h3>
+                      <div className="space-y-4">
+                        <p className="text-lg text-gray-600 dark:text-gray-400">
+                          AI destekli değerlendirme sistemi ile sürekli kendini geliştir:
+                        </p>
+                        <ul className="space-y-3">
+                          <li className="flex items-start gap-3">
+                            <CheckCircleIcon className="w-6 h-6 text-[#34A853] flex-shrink-0 mt-1" />
+                            <div>
+                              <span className="text-lg font-medium text-[#34A853] dark:text-[#34A853] block mb-1">Detaylı Analiz</span>
+                              <p className="text-gray-600 dark:text-gray-400">Her promptun güçlü ve zayıf yönlerini öğren, AI'dan kapsamlı geri bildirim al.</p>
+                            </div>
+                          </li>
+                          <li className="flex items-start gap-3">
+                            <CheckCircleIcon className="w-6 h-6 text-[#34A853] flex-shrink-0 mt-1" />
+                            <div>
+                              <span className="text-lg font-medium text-[#34A853] dark:text-[#34A853] block mb-1">Kişisel Öneriler</span>
+                              <p className="text-gray-600 dark:text-gray-400">Performansına özel iyileştirme önerileri ile promptlarını daha etkili hale getir.</p>
+                            </div>
+                          </li>
+                          <li className="flex items-start gap-3">
+                            <CheckCircleIcon className="w-6 h-6 text-[#34A853] flex-shrink-0 mt-1" />
+                            <div>
+                              <span className="text-lg font-medium text-[#34A853] dark:text-[#34A853] block mb-1">Başarı Takibi</span>
+                              <p className="text-gray-600 dark:text-gray-400">Seviye atladıkça rozetler kazan, ilerleme grafiklerini takip et ve başarılarını gör.</p>
+                            </div>
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Test Modalını buraya ekleyelim */}
+        {/* Test Modalı */}
         <SelfTestModal
           isOpen={isTestModalOpen}
           closeModal={() => setIsTestModalOpen(false)}
@@ -1013,23 +1241,23 @@ export default function Home() {
           username
         )}
       </div>
-      <main className="min-h-screen bg-gray-50 dark:bg-gray-900 p-8">
-        {/* Progress ve Test Butonu */}
+    <main className="min-h-screen bg-gray-50 dark:bg-gray-900 p-8">
+      {/* Progress ve Test Butonu */}
         <div className="fixed top-6 right-6 bg-white/90 backdrop-blur-sm dark:bg-gray-800/90 rounded-xl shadow-lg p-4 z-40">
-          <div className="text-gray-800 dark:text-gray-100">
+        <div className="text-gray-800 dark:text-gray-100">
             <div className="flex items-center gap-2 mb-3">
-              <RocketLaunchIcon className="w-5 h-5 text-[#4285F4]" />
+            <RocketLaunchIcon className="w-5 h-5 text-[#4285F4]" />
               <p className="text-sm font-medium">Mevcut Seviye: <span className="text-[#4285F4] font-bold">{currentLevel}</span><span className="text-gray-400 dark:text-gray-500">/30</span></p>
-            </div>
+          </div>
             <div className="relative mb-8">
               <div className="h-2.5 w-40 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden grid grid-cols-30 gap-px">
                 {Array.from({ length: 30 }, (_, i) => (
-                  <div 
+            <div 
                     key={i} 
                     className={`h-full ${i < currentLevel ? 'bg-gradient-to-r from-[#4285F4] to-[#34A853]' : ''}`}
-                  />
+            />
                 ))}
-              </div>
+          </div>
               <div className="absolute -bottom-5 left-0 right-0 flex justify-between items-center">
                 <p className="text-xs font-medium text-[#4285F4]">
                   Seviye {currentLevel}
@@ -1039,118 +1267,118 @@ export default function Home() {
                 </p>
               </div>
             </div>
-          </div>
-          
-          {/* Her zaman görünür test butonu */}
-          <button 
-            onClick={() => setIsTestModalOpen(true)}
+        </div>
+        
+        {/* Her zaman görünür test butonu */}
+        <button 
+          onClick={() => setIsTestModalOpen(true)}
             className="w-full px-4 py-2.5 bg-gradient-to-r from-[#4285F4] to-[#34A853] rounded-lg text-white font-medium text-sm hover:opacity-90 transition-all duration-300 hover:shadow-lg hover:shadow-[#4285F4]/20"
-          >
-            Kendini Test Et
-          </button>
-        </div>
+        >
+          Kendini Test Et
+        </button>
+      </div>
 
-        {/* Header */}
-        <div className="text-center mb-24">
-          <h1 className="text-6xl font-bold mb-12 text-transparent bg-clip-text bg-gradient-to-r from-[#4285F4] to-[#34A853]">
-            Prompt Mühendisliği
-            <span className="text-4xl font-medium mt-2 block text-gray-600 dark:text-gray-300">
-              Öğrenme Platformu
-            </span>
-          </h1>
-        </div>
+      {/* Header */}
+      <div className="text-center mb-24">
+        <h1 className="text-6xl font-bold mb-12 text-transparent bg-clip-text bg-gradient-to-r from-[#4285F4] to-[#34A853]">
+          Prompt Mühendisliği
+          <span className="text-4xl font-medium mt-2 block text-gray-600 dark:text-gray-300">
+            Öğrenme Platformu
+          </span>
+        </h1>
+      </div>
 
-        {/* Difficulty Sections */}
-        <div className="max-w-[1400px] mx-auto space-y-16">
-          {['Kolay', 'Orta', 'Zor'].map((difficulty) => (
-            <div key={difficulty} className="relative">
-              <div className="flex items-center mb-8">
-                <h2 className="text-2xl font-bold" style={{ color: getDifficultyColor(difficulty) }}>
-                  {difficulty} Seviyeler
-                </h2>
-                <div className="flex-1 h-px ml-6" style={{ 
-                  background: `linear-gradient(to right, ${getDifficultyColor(difficulty)}40, transparent)` 
-                }} />
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                {levels
-                  .filter(level => level.difficulty === difficulty)
-                  .map((level, index) => (
-                    <div 
-                      key={level.number} 
-                      className="relative group cursor-pointer transform transition-all duration-300 hover:scale-105"
-                      onClick={() => handleLevelClick(level)}
-                    >
-                      <div className={`
+      {/* Difficulty Sections */}
+      <div className="max-w-[1400px] mx-auto space-y-16">
+        {['Kolay', 'Orta', 'Zor'].map((difficulty) => (
+          <div key={difficulty} className="relative">
+            <div className="flex items-center mb-8">
+              <h2 className="text-2xl font-bold" style={{ color: getDifficultyColor(difficulty) }}>
+                {difficulty} Seviyeler
+              </h2>
+              <div className="flex-1 h-px ml-6" style={{ 
+                background: `linear-gradient(to right, ${getDifficultyColor(difficulty)}40, transparent)` 
+              }} />
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              {levels
+                .filter(level => level.difficulty === difficulty)
+                .map((level, index) => (
+                  <div 
+                    key={level.number} 
+                    className="relative group cursor-pointer transform transition-all duration-300 hover:scale-105"
+                    onClick={() => handleLevelClick(level)}
+                  >
+                    <div className={`
                         relative p-6 rounded-xl border-4 transition-all duration-300 overflow-hidden
-                        ${level.isCurrent 
-                          ? 'border-[#34A853] bg-[#34A853]/5 shadow-xl shadow-[#34A853]/20' 
-                          : level.isLocked
-                          ? 'border-opacity-40 bg-opacity-5 border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800'
-                          : level.isCompleted
-                          ? `border-[${getDifficultyColor(difficulty)}] bg-[${getDifficultyColor(difficulty)}]/5 hover:shadow-lg`
-                          : `border-[${getDifficultyColor(difficulty)}] bg-[${getDifficultyColor(difficulty)}]/5 hover:shadow-lg`
-                        }
-                        ${!level.isLocked && 'hover:shadow-xl hover:shadow-[#4285F4]/20'}
-                      `}
-                      style={{
-                        borderColor: level.isCurrent ? '#34A853' : level.isLocked ? undefined : getDifficultyColor(difficulty),
-                        transform: level.isCurrent ? 'scale(1.05)' : undefined
-                      }}>
-                        <div className="text-center relative z-10">
+                      ${level.isCurrent 
+                        ? 'border-[#34A853] bg-[#34A853]/5 shadow-xl shadow-[#34A853]/20' 
+                        : level.isLocked
+                        ? 'border-opacity-40 bg-opacity-5 border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800'
+                        : level.isCompleted
+                        ? `border-[${getDifficultyColor(difficulty)}] bg-[${getDifficultyColor(difficulty)}]/5 hover:shadow-lg`
+                        : `border-[${getDifficultyColor(difficulty)}] bg-[${getDifficultyColor(difficulty)}]/5 hover:shadow-lg`
+                      }
+                      ${!level.isLocked && 'hover:shadow-xl hover:shadow-[#4285F4]/20'}
+                    `}
+                    style={{
+                      borderColor: level.isCurrent ? '#34A853' : level.isLocked ? undefined : getDifficultyColor(difficulty),
+                      transform: level.isCurrent ? 'scale(1.05)' : undefined
+                    }}>
+                      <div className="text-center relative z-10">
                           <span className={`block text-2xl font-bold mb-2 ${
-                            level.isLocked 
-                              ? 'text-gray-400 dark:text-gray-500' 
-                              : 'text-gray-800 dark:text-gray-100'
-                          }`}>
-                            Seviye {level.number}
-                          </span>
+                          level.isLocked 
+                            ? 'text-gray-400 dark:text-gray-500' 
+                            : 'text-gray-800 dark:text-gray-100'
+                        }`}>
+                          Seviye {level.number}
+                        </span>
                           <p className="font-medium" style={{ 
-                            color: `${getDifficultyColor(difficulty)}${level.isLocked ? '40' : '90'}`
-                          }}>
-                            {difficulty}
-                          </p>
-                        </div>
+                          color: `${getDifficultyColor(difficulty)}${level.isLocked ? '40' : '90'}`
+                        }}>
+                          {difficulty}
+                        </p>
+                      </div>
 
-                        {level.isLocked && (
+                      {level.isLocked && (
                           <div className="absolute inset-0 flex items-center justify-center bg-white/60 dark:bg-gray-900/60 backdrop-blur-[2px]">
                             <div className="bg-gray-100/80 dark:bg-gray-800/80 p-3 rounded-full">
                               <LockClosedIcon className="w-6 h-6 text-gray-400 dark:text-gray-500" />
                             </div>
-                          </div>
-                        )}
+                        </div>
+                      )}
 
-                        {/* Connection Line */}
-                        {index < 9 && (
-                          <div className="absolute -right-4 top-1/2 transform -translate-y-1/2 w-4 h-[2px]"
-                            style={{
-                              backgroundColor: getDifficultyColor(difficulty),
-                              opacity: level.isLocked ? 0.2 : 0.4
-                            }}
-                          />
-                        )}
-                      </div>
+                      {/* Connection Line */}
+                      {index < 9 && (
+                        <div className="absolute -right-4 top-1/2 transform -translate-y-1/2 w-4 h-[2px]"
+                          style={{
+                            backgroundColor: getDifficultyColor(difficulty),
+                            opacity: level.isLocked ? 0.2 : 0.4
+                          }}
+                        />
+                      )}
                     </div>
-                  ))}
-              </div>
+                  </div>
+                ))}
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
+      </div>
 
-        {/* Modals */}
-        <LevelModal
-          isOpen={isLevelModalOpen}
-          closeModal={() => setIsLevelModalOpen(false)}
-          level={selectedLevel}
-          currentLevel={currentLevel}
-        />
+      {/* Modals */}
+      <LevelModal
+        isOpen={isLevelModalOpen}
+        closeModal={() => setIsLevelModalOpen(false)}
+        level={selectedLevel}
+        currentLevel={currentLevel}
+      />
 
-        <SelfTestModal
-          isOpen={isTestModalOpen}
-          closeModal={() => setIsTestModalOpen(false)}
-          onComplete={handleTestComplete}
-        />
-      </main>
+      <SelfTestModal
+        isOpen={isTestModalOpen}
+        closeModal={() => setIsTestModalOpen(false)}
+        onComplete={handleTestComplete}
+      />
+    </main>
     </>
   );
 }
