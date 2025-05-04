@@ -102,7 +102,7 @@ const LevelModal = ({ isOpen, closeModal, level, currentLevel }: LevelModalProps
                     </span>
                   </Dialog.Title>
                   <p className="mt-2 text-gray-600 dark:text-gray-400">
-                    {level?.isCompleted ? 'Bu seviyeyi tamamladınız!' : level?.isCurrent ? 'Şu anki seviyeniz' : level?.isLocked ? 'Bu seviye henüz kilitli' : 'Bu seviyeye erişebilirsiniz'}
+                    {level?.isCompleted ? 'Bu seviyeyi tamamladınız!' : level?.isCurrent ? 'Şu anki seviyeniz' : isLevelAvailable ? 'Bu seviyeye erişebilirsiniz' : 'Bu seviye henüz kilitli'}
                   </p>
                 </div>
 
@@ -230,7 +230,7 @@ const LevelModal = ({ isOpen, closeModal, level, currentLevel }: LevelModalProps
                           Seviye Yetersiz
                         </h3>
                         <p className="text-gray-600 dark:text-gray-400 max-w-md mx-auto">
-                          Bu seviyeye erişmek için <span className="font-semibold text-orange-500">{level?.number}. seviye</span>'ye ulaşmanız gerekiyor. 
+                          Bu seviyeye erişmek için önce <span className="font-semibold text-orange-500">{currentLevel}. seviye</span>'yi tamamlamanız gerekiyor.
                           <br/>
                           <span className="inline-block mt-2">
                             Şu anki seviyeniz: <span className="font-semibold text-[#4285F4]">{currentLevel}</span>
@@ -684,8 +684,9 @@ export default function Home() {
       
       setLevels(parsedLevels.map((level: Level) => ({
         ...level,
-        isLocked: !level.isCompleted && level.number !== 1,
-        isCurrent: level.number === savedCurrentLevel
+        isLocked: level.number > savedCurrentLevel, // Mevcut seviyeye kadar olan tüm seviyeleri aç
+        isCurrent: level.number === savedCurrentLevel,
+        isCompleted: level.number < savedCurrentLevel // Önceki seviyeleri tamamlanmış olarak işaretle
       })));
       
       setCurrentLevel(savedCurrentLevel);
@@ -693,7 +694,8 @@ export default function Home() {
       setLevels(prev => prev.map(level => ({
         ...level,
         isLocked: level.number !== 1,
-        isCurrent: level.number === 1
+        isCurrent: level.number === 1,
+        isCompleted: false
       })));
     }
     
@@ -733,7 +735,8 @@ export default function Home() {
       prevLevels.map(l => ({
         ...l,
         isLocked: l.number > level,
-        isCurrent: l.number === level
+        isCurrent: l.number === level,
+        isCompleted: l.number < level // Önceki seviyeleri tamamlanmış olarak işaretle
       }))
     );
     setIsTestModalOpen(false);
@@ -746,7 +749,8 @@ export default function Home() {
       prevLevels.map(l => ({
         ...l,
         isLocked: l.number !== 1,
-        isCurrent: l.number === 1
+        isCurrent: l.number === 1,
+        isCompleted: false
       }))
     );
     // Seviye 1'i seç ve modalı aç
