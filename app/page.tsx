@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { LockClosedIcon, ExclamationTriangleIcon, ChevronDownIcon, ChevronUpIcon, LightBulbIcon, SparklesIcon } from '@heroicons/react/24/outline';
+import { LockClosedIcon, ExclamationTriangleIcon, ChevronDownIcon, ChevronUpIcon, LightBulbIcon, SparklesIcon, ClipboardDocumentListIcon } from '@heroicons/react/24/outline';
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 import { ChatBubbleLeftRightIcon, CheckCircleIcon, XCircleIcon, BeakerIcon, RocketLaunchIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
@@ -48,6 +48,12 @@ interface LevelInputResponse {
 interface CelebrationModalProps {
   isOpen: boolean;
   closeModal: () => void;
+}
+
+interface EvaluationResult {
+  skor: number;
+  feedback: string;
+  suggestions: string[];
 }
 
 // Level Modal Component
@@ -628,6 +634,8 @@ const SelfTestModal = ({ isOpen, closeModal, onComplete }: SelfTestModalProps) =
   const [showHints, setShowHints] = useState(false);
   const [answers, setAnswers] = useState<string[]>(['', '', '']);
   const [showResults, setShowResults] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
   const [testResults, setTestResults] = useState<{
     totalScore: number;
     recommendedLevel: number;
@@ -676,41 +684,82 @@ const SelfTestModal = ({ isOpen, closeModal, onComplete }: SelfTestModalProps) =
     }
   };
 
-  const evaluateTest = () => {
+  interface WeightedScores {
+    'Kolay': number;
+    'Orta': number;
+    'Zor': number;
+  }
+
+  const evaluateTest = async () => {
     // Son sorunun cevabını kaydet
     const finalAnswers = [...answers];
     finalAnswers[currentQuestionIndex] = prompt;
+    setAnswers(finalAnswers);
+    setIsAnalyzing(true);
 
-    // Simüle edilmiş değerlendirme - Gerçek implementasyonda Gemini API kullanılacak
-    const results = {
-      totalScore: 0,
-      recommendedLevel: 1,
-      feedback: finalAnswers.map((answer, index) => {
-        const score = Math.min(100, Math.max(0, answer.length / 5)); // Simüle edilmiş skor
-        return {
-          score,
-          feedback: score > 70 
-            ? "Mükemmel! Prompt yazma tekniklerini iyi kullanmışsınız." 
-            : "Geliştirilebilir. Daha spesifik ve detaylı promptlar yazabilirsiniz.",
-          suggestions: [
-            "Daha net talimatlar ekleyebilirsiniz",
-            "Bağlamı daha iyi tanımlayabilirsiniz",
-            "Çıktı formatını belirtebilirsiniz"
-          ]
-        };
-      })
-    };
+    try {
+      // Her soru için API çağrısı yap
+      const evaluationPromises = finalAnswers.map((answer, index) => 
+        fetch('/api/evaluate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            question: testQuestions[index].question,
+            prompt: testQuestions[index].task,
+            userInput: answer.trim(),
+            questionNumber: index + 1
+          }),
+        }).then(res => res.json())
+      );
 
-    // Toplam skoru hesapla
-    results.totalScore = Math.round(
-      results.feedback.reduce((acc, curr) => acc + curr.score, 0) / results.feedback.length
-    );
+      // Tüm API çağrılarının tamamlanmasını bekle
+      const evaluationResults = await Promise.all(evaluationPromises);
 
-    // Önerilen seviyeyi belirle
-    results.recommendedLevel = Math.max(1, Math.min(30, Math.floor(results.totalScore / 3.33)));
+      // Sonuçları işle
+      const results = {
+        totalScore: 0,
+        recommendedLevel: 1,
+        feedback: evaluationResults.map((result: EvaluationResult) => ({
+          score: result.skor || 0,
+          feedback: result.feedback || "Değerlendirme yapılamadı.",
+          suggestions: result.suggestions || []
+        }))
+      };
 
-    setTestResults(results);
-    setShowResults(true);
+      // Zorluk seviyelerine göre ağırlıklar
+      const weights: WeightedScores = {
+        'Kolay': 0.2,   // %20 ağırlık
+        'Orta': 0.3,    // %30 ağırlık
+        'Zor': 0.5      // %50 ağırlık
+      };
+
+      // Ağırlıklı toplam skoru hesapla
+      const weightedScores = results.feedback.map((result, index) => {
+        const difficulty = testQuestions[index].difficulty as keyof WeightedScores;
+        return result.score * weights[difficulty];
+      });
+
+      // Toplam skoru hesapla (0-100 arası)
+      results.totalScore = Math.round(
+        weightedScores.reduce((acc, score) => acc + score, 0)
+      );
+
+      // Önerilen seviyeyi belirle
+      results.recommendedLevel = Math.max(1, Math.min(30, Math.floor(results.totalScore / 3.33)));
+
+      // Biraz gecikme ekleyelim ki analiz animasyonu görülebilsin
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      setTestResults(results);
+      setShowResults(true);
+      setIsAnalyzing(false);
+    } catch (error) {
+      console.error('Test değerlendirme hatası:', error);
+      toast.error('Test değerlendirme sırasında bir hata oluştu!');
+      setIsAnalyzing(false);
+    }
   };
 
   const handleComplete = () => {
@@ -763,56 +812,190 @@ const SelfTestModal = ({ isOpen, closeModal, onComplete }: SelfTestModalProps) =
                   </div>
 
                   <div className="space-y-8">
-                    {/* Genel Skor */}
-                    <div className="bg-gradient-to-r from-[#4285F4]/10 to-[#34A853]/10 rounded-xl p-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                          Genel Performans
-                        </h3>
-                        <div className="flex items-center gap-2">
-                          <span className="text-2xl font-bold text-[#4285F4]">
-                            {testResults.totalScore}
-                          </span>
-                          <span className="text-gray-600 dark:text-gray-400">/ 100</span>
-                        </div>
-                      </div>
-                      <p className="text-gray-600 dark:text-gray-400">
-                        Önerilen Başlangıç Seviyesi: {testResults.recommendedLevel}
-                      </p>
-                    </div>
-
-                    {/* Soru Detayları */}
-                    <div className="space-y-4">
-                      {testResults.feedback.map((result, index) => (
-                        <div key={index} className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-                          <div className="flex items-center justify-between mb-4">
-                            <h4 className="font-medium text-gray-900 dark:text-gray-100">
-                              Soru {index + 1} - {testQuestions[index].difficulty}
-                            </h4>
-                            <span className="text-lg font-semibold text-[#4285F4]">
-                              {result.score}/100
-                            </span>
+                    {/* Özet Bölümü */}
+                    <div className="bg-gradient-to-br from-[#4285F4]/5 to-[#34A853]/5 rounded-2xl p-8 border border-[#4285F4]/20 dark:border-gray-700 relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-[#4285F4]/10 to-[#34A853]/10 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2"></div>
+                      
+                      <div className="relative space-y-6">
+                        <div className="flex items-center gap-4">
+                          <div className="bg-gradient-to-br from-[#4285F4] to-[#34A853] rounded-xl p-3 shadow-lg">
+                            <RocketLaunchIcon className="w-8 h-8 text-white" />
                           </div>
-                          <div className="space-y-3">
-                            <p className="text-gray-600 dark:text-gray-400">
-                              {result.feedback}
+                          <div>
+                            <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                              Tebrikler! 🎉
+                            </h3>
+                            <p className="text-gray-600 dark:text-gray-400 mt-1">
+                              Test değerlendirmeniz tamamlandı.
                             </p>
-                            <div className="bg-[#4285F4]/5 rounded-lg p-4">
-                              <h5 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                                Öneriler
-                              </h5>
-                              <ul className="list-disc list-inside space-y-1">
-                                {result.suggestions.map((suggestion, i) => (
-                                  <li key={i} className="text-sm text-gray-600 dark:text-gray-400">
-                                    {suggestion}
-                                  </li>
-                                ))}
-                              </ul>
+                          </div>
+                        </div>
+
+                        <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl p-6 border border-[#4285F4]/10 dark:border-gray-700/50">
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="space-y-1">
+                              <p className="text-gray-600 dark:text-gray-400">
+                                Önerilen Başlangıç Seviyesi
+                              </p>
+                              <p className="text-3xl font-bold text-[#4285F4]">
+                                Seviye {testResults.recommendedLevel}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-sm text-gray-500 dark:text-gray-400">
+                                Genel Performans
+                              </div>
+                              <div className="text-2xl font-bold text-[#34A853]">
+                                {testResults.totalScore}/100
+                              </div>
                             </div>
                           </div>
+                          
+                          <p className="text-gray-600 dark:text-gray-400">
+                            AI değerlendirmesine göre {testResults.recommendedLevel}. seviyeden başlamanız önerilir. Bu seviye, test performansınıza göre en uygun zorluk derecesini temsil eder.
+                          </p>
                         </div>
-                      ))}
+
+                        <button
+                          onClick={() => setShowDetails(!showDetails)}
+                          className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-white dark:bg-gray-900 rounded-xl border-2 border-[#4285F4] text-[#4285F4] hover:bg-[#4285F4]/5 transition-all duration-300"
+                        >
+                          {showDetails ? (
+                            <>
+                              <ChevronUpIcon className="w-5 h-5" />
+                              Test Detaylarını Gizle
+                            </>
+                          ) : (
+                            <>
+                              <ChevronDownIcon className="w-5 h-5" />
+                              Test Detaylarını Göster
+                            </>
+                          )}
+                        </button>
+                      </div>
                     </div>
+
+                    {/* Test Detayları (Açılır/Kapanır) */}
+                    <Transition
+                      show={showDetails}
+                      enter="transition-all duration-300 ease-in-out"
+                      enterFrom="opacity-0 max-h-0"
+                      enterTo="opacity-100 max-h-[2000px]"
+                      leave="transition-all duration-200 ease-in-out"
+                      leaveFrom="opacity-100 max-h-[2000px]"
+                      leaveTo="opacity-0 max-h-0"
+                      className="overflow-hidden"
+                    >
+                      <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl p-6 border border-[#4285F4]/10 dark:border-gray-700/50 shadow-md mb-8">
+                        <div className="flex items-center gap-3 mb-8">
+                          <div className="bg-[#4285F4] bg-opacity-10 rounded-lg p-2">
+                            <ClipboardDocumentListIcon className="w-6 h-6 text-[#4285F4]" />
+                          </div>
+                          <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                            Test Detayları
+                          </h3>
+                        </div>
+
+                        <div className="space-y-6">
+                          {testQuestions.map((question, index) => (
+                            <div key={index} className="relative">
+                              {/* Skor Badge */}
+                              {testResults && (
+                                <div className="absolute -right-3 -top-3 bg-gradient-to-br from-[#4285F4] to-[#34A853] text-white px-4 py-2 rounded-lg shadow-lg font-bold text-lg z-10">
+                                  {testResults.feedback[index].score}/100
+                                </div>
+                              )}
+
+                              <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-xl border border-gray-100 dark:border-gray-700 shadow-lg overflow-hidden">
+                                {/* Header */}
+                                <div className="bg-gradient-to-r from-[#4285F4]/10 to-[#34A853]/10 dark:from-[#4285F4]/20 dark:to-[#34A853]/20 px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+                                  <div className="flex items-center gap-3">
+                                    <div className="bg-white dark:bg-gray-800 rounded-lg p-2 shadow-md">
+                                      <span className="text-lg font-bold text-[#4285F4]">#{index + 1}</span>
+                                    </div>
+                                    <h4 className="font-semibold text-gray-900 dark:text-gray-100 text-lg">
+                                      {question.difficulty} Seviye Sorusu
+                                    </h4>
+                                  </div>
+                                </div>
+
+                                {/* Content */}
+                                <div className="p-6 space-y-6">
+                                  {/* Soru ve Görev */}
+                                  <div className="space-y-4">
+                                    <div className="space-y-2">
+                                      <div className="flex items-center gap-2 text-[#4285F4]">
+                                        <ChatBubbleLeftRightIcon className="w-5 h-5" />
+                                        <span className="font-medium">Soru</span>
+                                      </div>
+                                      <p className="text-gray-700 dark:text-gray-300 pl-7">
+                                        {question.question}
+                                      </p>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                      <div className="flex items-center gap-2 text-[#34A853]">
+                                        <ClipboardDocumentListIcon className="w-5 h-5" />
+                                        <span className="font-medium">Görev</span>
+                                      </div>
+                                      <p className="text-gray-700 dark:text-gray-300 pl-7">
+                                        {question.task}
+                                      </p>
+                                    </div>
+                                  </div>
+
+                                  {/* Cevap */}
+                                  <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-4 space-y-2">
+                                    <div className="flex items-center gap-2 text-[#FBBC05]">
+                                      <SparklesIcon className="w-5 h-5" />
+                                      <span className="font-medium">Cevabınız</span>
+                                    </div>
+                                    <p className="text-gray-700 dark:text-gray-300 pl-7 font-mono">
+                                      {answers[index]}
+                                    </p>
+                                  </div>
+
+                                  {testResults && (
+                                    <>
+                                      {/* AI Değerlendirmesi */}
+                                      <div className="bg-[#4285F4]/5 dark:bg-[#4285F4]/10 rounded-xl p-4 space-y-2">
+                                        <div className="flex items-center gap-2 text-[#4285F4]">
+                                          <BeakerIcon className="w-5 h-5" />
+                                          <span className="font-medium">AI Değerlendirmesi</span>
+                                        </div>
+                                        <p className="text-gray-700 dark:text-gray-300 pl-7">
+                                          {testResults.feedback[index].feedback}
+                                        </p>
+                                      </div>
+
+                                      {/* Öneriler */}
+                                      {testResults.feedback[index].suggestions.length > 0 && (
+                                        <div className="bg-[#34A853]/5 dark:bg-[#34A853]/10 rounded-xl p-4 space-y-3">
+                                          <div className="flex items-center gap-2 text-[#34A853]">
+                                            <LightBulbIcon className="w-5 h-5" />
+                                            <span className="font-medium">Geliştirme Önerileri</span>
+                                          </div>
+                                          <ul className="space-y-2 pl-7">
+                                            {testResults.feedback[index].suggestions.map((suggestion, i) => (
+                                              <li key={i} className="flex items-start gap-2 text-gray-700 dark:text-gray-300">
+                                                <div className="mt-1.5">
+                                                  <div className="w-1.5 h-1.5 bg-[#34A853] rounded-full"></div>
+                                                </div>
+                                                {suggestion}
+                                              </li>
+                                            ))}
+                                          </ul>
+                                        </div>
+                                      )}
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </Transition>
 
                     {/* Aksiyon Butonları */}
                     <div className="flex justify-end gap-3 pt-4">
@@ -842,6 +1025,74 @@ const SelfTestModal = ({ isOpen, closeModal, onComplete }: SelfTestModalProps) =
                         Seviyeye Başla
                         <RocketLaunchIcon className="w-5 h-5" />
                       </button>
+                    </div>
+                  </div>
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </div>
+        </Dialog>
+      </Transition>
+    );
+  }
+
+  if (isAnalyzing) {
+    return (
+      <Transition appear show={isOpen} as={Fragment}>
+        <Dialog as="div" className="relative z-50" onClose={closeModal}>
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black/25 backdrop-blur-sm" />
+          </Transition.Child>
+
+          <div className="fixed inset-0 overflow-y-auto">
+            <div className="flex min-h-full items-center justify-center p-4">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 scale-95"
+                enterTo="opacity-100 scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 scale-100"
+                leaveTo="opacity-0 scale-95"
+              >
+                <Dialog.Panel className="w-full max-w-4xl transform overflow-hidden rounded-2xl bg-white dark:bg-gray-800 p-6 text-left align-middle shadow-xl transition-all">
+                  <div className="border-b border-gray-200 dark:border-gray-700 pb-4 mb-6">
+                    <Dialog.Title className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center justify-between">
+                      <span className="flex items-center gap-2">
+                        <SparklesIcon className="w-8 h-8 text-[#4285F4]" />
+                        Test Değerlendiriliyor
+                      </span>
+                    </Dialog.Title>
+                  </div>
+
+                  <div className="flex flex-col items-center justify-center py-12 space-y-8">
+                    <div className="relative">
+                      <div className="w-24 h-24 rounded-full border-4 border-[#4285F4]/20 border-t-[#4285F4] animate-spin"></div>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <SparklesIcon className="w-10 h-10 text-[#4285F4] animate-pulse" />
+                      </div>
+                    </div>
+
+                    <div className="text-center space-y-4">
+                      <h3 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
+                        AI Tarafından Analiz Ediliyor
+                      </h3>
+                      <p className="text-gray-600 dark:text-gray-400 max-w-md">
+                        Cevaplarınız yapay zeka tarafından değerlendiriliyor. Bu işlem birkaç saniye sürebilir.
+                      </p>
+                      <div className="flex items-center justify-center gap-1 text-[#4285F4] font-medium">
+                        <span className="animate-bounce">.</span>
+                        <span className="animate-bounce" style={{ animationDelay: '0.2s' }}>.</span>
+                        <span className="animate-bounce" style={{ animationDelay: '0.4s' }}>.</span>
+                      </div>
                     </div>
                   </div>
                 </Dialog.Panel>

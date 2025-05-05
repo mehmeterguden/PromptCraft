@@ -61,56 +61,61 @@ def analyze_prompt(question: str, prompt: str, user_input: str, question_number:
 
     ZORLUK SEVİYESİNE GÖRE DEĞERLENDİRME:
     1. Kolay Sorular (1-10):
-       - Başlangıç puanı: 70 puan
-       - Temel yanıt yeterliliği: +20 puan
-       - Ekstra detay/yaratıcılık: +10 puan
-       - Minimum geçer puan: 60
+       - Başlangıç puanı: 0 puan
+       - Temel yanıt yeterliliği: +30 puan
+       - Doğru içerik: +30 puan
+       - Ekstra detay/yaratıcılık: +40 puan
+       - Geçme notu: 70
        
     2. Orta Zorlukta Sorular (11-20):
-       - Başlangıç puanı: 60 puan
-       - İyi yapılandırılmış yanıt: +20 puan
-       - Detaylı açıklama: +10 puan
-       - Yaratıcı yaklaşım: +10 puan
-       - Minimum geçer puan: 70
+       - Başlangıç puanı: 0 puan
+       - Temel yanıt yeterliliği: +25 puan
+       - Doğru içerik: +35 puan
+       - Detaylı açıklama: +20 puan
+       - Yaratıcı yaklaşım: +20 puan
+       - Geçme notu: 70
        
     3. Zor Sorular (21-30):
-       - Başlangıç puanı: 50 puan
-       - Kapsamlı yanıt: +20 puan
-       - Detaylı açıklama: +15 puan
-       - Yaratıcı ve özgün yaklaşım: +15 puan
-       - Minimum geçer puan: 80
+       - Başlangıç puanı: 0 puan
+       - Temel yanıt yeterliliği: +20 puan
+       - Doğru içerik: +30 puan
+       - Detaylı açıklama: +25 puan
+       - Yaratıcı ve özgün yaklaşım: +25 puan
+       - Geçme notu: 70
 
     DETAYLI DEĞERLENDİRME KRİTERLERİ:
     1. Skor Değerlendirmesi (Zorluk seviyesine göre ayarlanır):
        
        İçerik Kalitesi (40 puan):
-       - Yanıtın detay seviyesi (15p * zorluk katsayısı)
-       - Dil ve anlatım kalitesi (15p * zorluk katsayısı)
-       - Özgünlük ve yaratıcılık (10p * zorluk katsayısı)
+       - Yanıtın detay seviyesi ve doğruluğu (20p)
+       - Dil ve anlatım kalitesi (10p)
+       - Özgünlük ve yaratıcılık (10p)
        
-       Soruya Uygunluk (30 puan):
-       - Doğru cevap oranı (20p * zorluk katsayısı)
-       - Konu bütünlüğü (10p * zorluk katsayısı)
+       Soruya Uygunluk (35 puan):
+       - Doğru cevap oranı (25p)
+       - Konu bütünlüğü (10p)
        
-       Prompt Yönergelerine Uyum (30 puan):
-       - Yönergeleri takip etme (20p * zorluk katsayısı)
-       - Format ve yapı (10p * zorluk katsayısı)
+       Prompt Yönergelerine Uyum (25 puan):
+       - Yönergeleri takip etme (15p)
+       - Format ve yapı (10p)
+
+       Boş veya anlamsız yanıtlar otomatik olarak 0 puan alır.
 
     2. Feedback Yazımı (Zorluk Seviyesine Göre):
        Kolay Sorular (1-10):
-       - 80-100: "Harika! Soruyu çok iyi anlamış ve yanıtlamışsınız."
-       - 60-79: "İyi bir yanıt. Temel beklentiler karşılanmış."
-       - 0-59: "Biraz daha detay ekleyerek geliştirebilirsiniz."
+       - 85-100: "Mükemmel! Tüm beklentileri karşılayan eksiksiz bir yanıt."
+       - 70-84: "İyi! Temel beklentiler karşılanmış ama geliştirilebilir."
+       - 0-69: "Geçersiz. Daha fazla çaba ve detay gerekiyor."
 
        Orta Zorlukta Sorular (11-20):
-       - 85-100: "Mükemmel! Detaylı ve iyi düşünülmüş bir yanıt olmuş."
-       - 70-84: "İyi bir çalışma. Birkaç noktada geliştirilebilir."
-       - 0-69: "Daha kapsamlı bir yanıt gerekiyor."
+       - 85-100: "Olağanüstü! Detaylı ve profesyonel bir yanıt."
+       - 70-84: "Yeterli. Bazı eksikler var ama genel olarak iyi."
+       - 0-69: "Geçersiz. Daha kapsamlı ve detaylı çalışma gerekiyor."
 
        Zor Sorular (21-30):
-       - 90-100: "Olağanüstü! Hem teknik hem de yaratıcı açıdan üst düzey."
-       - 80-89: "Çok iyi! Birkaç ince detayla mükemmelleştirilebilir."
-       - 0-79: "Daha detaylı ve kapsamlı bir yanıt bekleniyor."
+       - 85-100: "Kusursuz! Hem teknik hem yaratıcı açıdan üst düzey."
+       - 70-84: "Başarılı. Birkaç eksiği var ama genel olarak iyi."
+       - 0-69: "Geçersiz. Beklenen seviyenin altında, daha fazla çalışma gerekli."
        
        Geri bildirimde:
        - Zorluk seviyesine uygun beklentileri belirt
@@ -131,8 +136,8 @@ def analyze_prompt(question: str, prompt: str, user_input: str, question_number:
     - Yanıt kesinlikle geçerli JSON formatında olmalı
     - Karakter limitlerini aşma
     - Zorluk seviyesine göre beklentileri ayarla
-    - Kolay sorularda daha toleranslı ol
-    - Zor sorularda daha detaylı değerlendirme yap
+    - Boş veya anlamsız yanıtlar 0 puan alır
+    - Her zorluk seviyesi için geçme notu 70'tir
     """
     
     try:
