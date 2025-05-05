@@ -23,6 +23,7 @@ interface LevelModalProps {
   closeModal: () => void;
   level: Level | null;
   currentLevel: number;
+  onLevelComplete: (newLevel: number) => void;
 }
 
 interface SelfTestModalProps {
@@ -31,15 +32,28 @@ interface SelfTestModalProps {
   onComplete: (level: number) => void;
 }
 
+interface LevelInputResponse {
+  message: string;
+  levelInput?: {
+    level: number;
+    userInput: string;
+    score: number;
+    feedback: string;
+    suggestions: string[];
+  };
+}
+
 // Level Modal Component
-const LevelModal = ({ isOpen, closeModal, level, currentLevel }: LevelModalProps) => {
+const LevelModal = ({ isOpen, closeModal, level, currentLevel, onLevelComplete }: LevelModalProps): JSX.Element | null => {
   const [userInput, setUserInput] = useState('');
+  const [initialUserInput, setInitialUserInput] = useState('');
   const [showHints, setShowHints] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [showPromptEditor, setShowPromptEditor] = useState(false);
   const [feedback, setFeedback] = useState<{
     success: boolean;
     message: string;
+    score: number;
     suggestions?: string[];
   } | null>(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -49,6 +63,7 @@ const LevelModal = ({ isOpen, closeModal, level, currentLevel }: LevelModalProps
     if (isOpen) {
       // State'i sıfırla
       setUserInput('');
+      setInitialUserInput('');
       setShowHints(false);
       setIsSubmitted(false);
       setFeedback(null);
@@ -59,43 +74,56 @@ const LevelModal = ({ isOpen, closeModal, level, currentLevel }: LevelModalProps
         fetchLevelInput();
       }
     }
-  }, [isOpen, level]); // isOpen ve level değiştiğinde tetiklenecek
+  }, [isOpen, level]);
 
   const fetchLevelInput = async () => {
     try {
       const savedUser = localStorage.getItem('user');
-      if (!savedUser || !level) return;
+      if (!savedUser || !level) {
+        console.log('User not logged in or level not selected');
+        setUserInput('');
+        setInitialUserInput('');
+        setFeedback(null);
+        setIsSubmitted(false);
+        return;
+      }
 
       const userData = JSON.parse(savedUser);
       const username = userData.username;
+      if (!username) {
+        console.log('Username not found in userData');
+        return;
+      }
+
       console.log('Fetching input for level:', level.number);
 
       const response = await fetch(`/api/prompts?username=${username}&level=${level.number}`);
-      const data = await response.json();
+      const data: LevelInputResponse = await response.json();
       console.log('Fetched level input:', data);
 
       if (response.ok) {
         if (data.levelInput) {
-          setUserInput(data.levelInput.userInput || '');
-          if (data.levelInput.evaluation) {
-            setFeedback({
-              success: data.levelInput.evaluation.score >= 70,
-              message: data.levelInput.evaluation.feedback,
-              suggestions: data.levelInput.evaluation.suggestions
-            });
-          }
+          const savedInput = data.levelInput.userInput || '';
+          setUserInput(savedInput);
+          setInitialUserInput(savedInput);
+          setFeedback({
+            success: data.levelInput.score >= 70,
+            message: data.levelInput.feedback || '',
+            score: data.levelInput.score || 0,
+            suggestions: data.levelInput.suggestions || []
+          });
           setIsSubmitted(!!data.levelInput.userInput);
         } else {
-          // Eğer seviye için input yoksa, alanları sıfırla
           setUserInput('');
+          setInitialUserInput('');
           setFeedback(null);
           setIsSubmitted(false);
         }
       }
     } catch (error) {
       console.error('Error fetching level input:', error);
-      // Hata durumunda da alanları sıfırla
       setUserInput('');
+      setInitialUserInput('');
       setFeedback(null);
       setIsSubmitted(false);
     }
@@ -142,15 +170,62 @@ const LevelModal = ({ isOpen, closeModal, level, currentLevel }: LevelModalProps
         throw new Error('Prompt kaydedilemedi');
       }
 
-      if (responseData.levelInput && responseData.levelInput.evaluation) {
+      // Verileri tekrar çek ve güncelle
+      const updatedDataResponse = await fetch(`/api/prompts?username=${username}&level=${level.number}`);
+      const updatedData = await updatedDataResponse.json();
+      
+      if (updatedDataResponse.ok && updatedData.levelInput) {
+        setUserInput(updatedData.levelInput.userInput || '');
+        setInitialUserInput(updatedData.levelInput.userInput || '');
+        
+        const newScore = updatedData.levelInput.score || 0;
+        const isPassing = newScore >= 70;
+        
         setFeedback({
-          success: responseData.levelInput.evaluation.score >= 70,
-          message: responseData.levelInput.evaluation.feedback,
-          suggestions: responseData.levelInput.evaluation.suggestions
+          success: isPassing,
+          message: updatedData.levelInput.feedback || '',
+          score: newScore,
+          suggestions: updatedData.levelInput.suggestions || []
         });
+
+        // Eğer mevcut seviyedeyse ve skor 70'in üzerindeyse bir sonraki seviyeyi aktif et
+        if (level.isCurrent && isPassing) {
+          const nextLevel = level.number + 1;
+          if (nextLevel <= 30) { // Maksimum seviye kontrolü
+            // Kullanıcının seviyesini güncelle
+            const updateLevelResponse = await fetch('/api/users/level', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                username,
+                newLevel: nextLevel
+              }),
+            });
+
+            if (updateLevelResponse.ok) {
+              // Local storage'daki kullanıcı bilgilerini güncelle
+              const updatedUserData = await updateLevelResponse.json();
+              localStorage.setItem('user', JSON.stringify(updatedUserData.user));
+              
+              // Ana sayfadaki state'i güncelle
+              onLevelComplete(nextLevel);
+              
+              // Başarı mesajı göster
+              toast.success(`Tebrikler! ${nextLevel}. seviye açıldı!`);
+            }
+          }
+        }
+
+        // Başarı/başarısızlık durumuna göre mesaj göster
+        if (isPassing) {
+          toast.success('Tebrikler! Bu seviyeyi başarıyla tamamladınız!');
+        } else {
+          toast.error('Üzgünüm, geçer not alamadınız. Tekrar deneyebilirsiniz.');
+        }
       }
 
-      toast.success('Prompt başarıyla kaydedildi!');
       setIsSubmitted(true);
 
     } catch (error) {
@@ -228,13 +303,15 @@ const LevelModal = ({ isOpen, closeModal, level, currentLevel }: LevelModalProps
                       <ChatBubbleLeftRightIcon className="w-8 h-8 text-[#4285F4]" />
                       Seviye {level?.number} - {level?.difficulty}
                     </div>
-                    <div className="flex items-center gap-2">
-                      <SparklesIcon className="w-6 h-6 text-yellow-500" />
-                      <span className="text-lg font-semibold">
-                        <span className="text-2xl">75</span>
-                        <span className="text-gray-400 dark:text-gray-500">/100</span>
-                      </span>
-                    </div>
+                    {feedback && feedback.score !== undefined && (
+                      <div className="flex items-center gap-2">
+                        <SparklesIcon className="w-6 h-6 text-yellow-500" />
+                        <span className="text-lg font-semibold">
+                          <span className="text-2xl">{feedback.score}</span>
+                          <span className="text-gray-400 dark:text-gray-500">/100</span>
+                        </span>
+                      </div>
+                    )}
                   </Dialog.Title>
                   <p className="mt-2 text-gray-600 dark:text-gray-400">
                     {level?.isCompleted ? 'Bu seviyeyi tamamladınız!' : level?.isCurrent ? 'Şu anki seviyeniz' : isLevelAvailable ? 'Bu seviyeye erişebilirsiniz' : 'Bu seviye henüz kilitli'}
@@ -243,19 +320,25 @@ const LevelModal = ({ isOpen, closeModal, level, currentLevel }: LevelModalProps
 
                 {isLevelAvailable && levelQuestion ? (
                   <div className="space-y-6">
-                    {/* Question Section */}
-                    <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                        Soru
-                      </h3>
-                      <p className="text-gray-700 dark:text-gray-300">
-                        {levelQuestion.question}
-                      </p>
-                      <div className="mt-4 bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                        <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                          Görev
-                        </h4>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {/* Question and Task Section Combined */}
+                    <div className="bg-gradient-to-br from-[#4285F4]/5 to-[#34A853]/5 rounded-2xl p-8 border border-[#4285F4]/20 dark:border-gray-700 shadow-lg">
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="bg-[#4285F4] bg-opacity-10 rounded-lg p-2">
+                          <ChatBubbleLeftRightIcon className="w-6 h-6 text-[#4285F4]" />
+                        </div>
+                        <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                          {levelQuestion.question}
+                        </h3>
+                      </div>
+
+                      <div className="mt-6 space-y-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <RocketLaunchIcon className="w-5 h-5 text-[#34A853]" />
+                          <span className="text-lg font-semibold text-[#34A853] dark:text-[#34A853]">
+                            Görev
+                          </span>
+                        </div>
+                        <p className="text-gray-600 dark:text-gray-400 leading-relaxed pl-7">
                           {levelQuestion.task}
                         </p>
                       </div>
@@ -269,7 +352,7 @@ const LevelModal = ({ isOpen, closeModal, level, currentLevel }: LevelModalProps
                         </h3>
                         <button
                           onClick={() => setShowHints(!showHints)}
-                          className="flex items-center gap-2 text-sm text-[#4285F4] hover:text-[#4285F4]/80"
+                          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-[#4285F4] hover:text-[#4285F4]/80 border border-[#4285F4] hover:bg-[#4285F4]/5 transition-all duration-300"
                         >
                           <LightBulbIcon className="w-5 h-5" />
                           {showHints ? 'İpuçlarını Gizle' : 'İpuçlarını Göster'}
@@ -298,6 +381,19 @@ const LevelModal = ({ isOpen, closeModal, level, currentLevel }: LevelModalProps
                           placeholder="Promptunuzu buraya yazın..."
                           className="w-full h-40 p-4 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:border-[#4285F4] transition-colors"
                         />
+                        <div className="mt-2 text-sm flex items-center gap-2">
+                          {isSubmitted ? (
+                            <>
+                              <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                              <span className="text-green-600 dark:text-green-400">Bu seviye için kaydedilmiş bir prompt var</span>
+                            </>
+                          ) : (
+                            <>
+                              <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+                              <span className="text-gray-500 dark:text-gray-400">Bu seviye için kaydedilmiş bir prompt yok</span>
+                            </>
+                          )}
+                        </div>
                       </div>
 
                       <div className="flex justify-end gap-3">
@@ -312,9 +408,9 @@ const LevelModal = ({ isOpen, closeModal, level, currentLevel }: LevelModalProps
                             console.log('Submit button clicked');
                             handleSubmit();
                           }}
-                          disabled={!userInput.trim()}
+                          disabled={!userInput.trim() || (isSubmitted && userInput === initialUserInput)}
                           className={`px-6 py-2 rounded-lg font-medium ${
-                            userInput.trim()
+                            userInput.trim() && (!isSubmitted || userInput !== initialUserInput)
                               ? 'bg-[#4285F4] text-white hover:bg-[#4285F4]/90'
                               : 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
                           }`}
@@ -325,97 +421,81 @@ const LevelModal = ({ isOpen, closeModal, level, currentLevel }: LevelModalProps
 
                       {/* Feedback Section */}
                       <div className="mt-8 space-y-6">
-                        <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-                          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-                            <ChatBubbleLeftRightIcon className="w-5 h-5 text-[#4285F4]" />
-                            Feedback
-                          </h3>
-                          <p className="text-gray-700 dark:text-gray-300">
-                            Promptunuz açık ve net bir şekilde yazılmış. Görevin gereksinimlerini karşılıyor ve istenen çıktıyı üretmek için gerekli tüm bilgileri içeriyor.
-                          </p>
-                        </div>
+                        {feedback && (
+                          <div className={`bg-gray-50 dark:bg-gray-900/50 rounded-xl p-6 border ${
+                            feedback.success 
+                              ? 'border-green-200 dark:border-green-800' 
+                              : 'border-red-200 dark:border-red-800'
+                          }`}>
+                            <div className="flex items-center justify-between mb-4">
+                              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                                <ChatBubbleLeftRightIcon className="w-5 h-5 text-[#4285F4]" />
+                                Değerlendirme
+                              </h3>
+                              <div className="flex items-center gap-2">
+                                {feedback.success ? (
+                                  <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                                    <CheckCircleIcon className="w-5 h-5" />
+                                    <span>Geçtiniz!</span>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
+                                    <XCircleIcon className="w-5 h-5" />
+                                    <span>Tekrar Deneyin</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <p className="text-gray-700 dark:text-gray-300">
+                              {feedback.message}
+                            </p>
+                          </div>
+                        )}
 
                         {/* Suggestions Section */}
-                        <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-                          <div 
-                            className="flex items-center justify-between cursor-pointer"
-                            onClick={() => setShowSuggestions(!showSuggestions)}
-                          >
-                            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                              <LightBulbIcon className="w-5 h-5 text-yellow-500" />
-                              Öneriler
-                            </h3>
-                            <button className="text-sm text-[#4285F4] hover:text-[#4285F4]/80 flex items-center gap-1">
-                              {showSuggestions ? (
-                                <>
-                                  <ChevronUpIcon className="w-5 h-5" />
-                                  Gizle
-                                </>
-                              ) : (
-                                <>
-                                  <ChevronDownIcon className="w-5 h-5" />
-                                  Göster
-                                </>
-                              )}
-                            </button>
-                          </div>
-                          
-                          {showSuggestions && (
-                            <ul className="space-y-3 mt-4">
-                              <li className="flex items-start gap-2">
-                                <div className="mt-1.5">
-                                  <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full"></div>
-                                </div>
-                                <p className="text-gray-700 dark:text-gray-300">
-                                  Daha spesifik talimatlar ekleyerek promptunuzu geliştirebilirsiniz.
-                                </p>
-                              </li>
-                              <li className="flex items-start gap-2">
-                                <div className="mt-1.5">
-                                  <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full"></div>
-                                </div>
-                                <p className="text-gray-700 dark:text-gray-300">
-                                  Çıktı formatını daha net belirterek daha tutarlı sonuçlar alabilirsiniz.
-                                </p>
-                              </li>
-                            </ul>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Feedback Section */}
-                    {isSubmitted && feedback && (
-                      <div className={`rounded-xl p-6 ${
-                        feedback.success
-                          ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-900'
-                          : 'bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-900'
-                      }`}>
-                        <div className="flex items-start gap-3">
-                          {feedback.success ? (
-                            <CheckCircleIcon className="w-6 h-6 text-green-500 flex-shrink-0" />
-                          ) : (
-                            <XCircleIcon className="w-6 h-6 text-orange-500 flex-shrink-0" />
-                          )}
-                          <div>
-                            <h3 className={`font-medium ${
-                              feedback.success ? 'text-green-900 dark:text-green-100' : 'text-orange-900 dark:text-orange-100'
-                            }`}>
-                              {feedback.message}
-                            </h3>
-                            {!feedback.success && feedback.suggestions && (
-                              <ul className="mt-3 list-disc list-inside space-y-1">
+                        {feedback && feedback.suggestions && feedback.suggestions.length > 0 && (
+                          <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+                            <div 
+                              className="flex items-center justify-between cursor-pointer"
+                              onClick={() => setShowSuggestions(!showSuggestions)}
+                            >
+                              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                                <LightBulbIcon className="w-5 h-5 text-yellow-500" />
+                                Öneriler
+                              </h3>
+                              <button className="text-sm text-[#4285F4] hover:text-[#4285F4]/80 flex items-center gap-1">
+                                {showSuggestions ? (
+                                  <>
+                                    <ChevronUpIcon className="w-5 h-5" />
+                                    Gizle
+                                  </>
+                                ) : (
+                                  <>
+                                    <ChevronDownIcon className="w-5 h-5" />
+                                    Göster
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                            
+                            {showSuggestions && (
+                              <ul className="space-y-3 mt-4">
                                 {feedback.suggestions.map((suggestion, index) => (
-                                  <li key={index} className="text-sm text-orange-700 dark:text-orange-300">
-                                    {suggestion}
+                                  <li key={index} className="flex items-start gap-2">
+                                    <div className="mt-1.5">
+                                      <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full"></div>
+                                    </div>
+                                    <p className="text-gray-700 dark:text-gray-300">
+                                      {suggestion}
+                                    </p>
                                   </li>
                                 ))}
                               </ul>
                             )}
                           </div>
-                        </div>
+                        )}
                       </div>
-                    )}
+                    </div>
                   </div>
                 ) : (
                   <div className="py-12">
@@ -731,27 +811,25 @@ const SelfTestModal = ({ isOpen, closeModal, onComplete }: SelfTestModalProps) =
                 </div>
 
                 <div className="space-y-6">
-                  {/* Question Section */}
-                  <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-                    <div className="flex items-center gap-2 mb-4">
-                      <RocketLaunchIcon className="w-5 h-5 text-[#4285F4]" />
-                      <span className={`text-sm font-medium px-2 py-1 rounded-full ${
-                        currentQuestion.difficulty === 'Kolay' ? 'bg-green-100 text-green-800' :
-                        currentQuestion.difficulty === 'Orta' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-red-100 text-red-800'
-                      }`}>
-                        {currentQuestion.difficulty}
-                      </span>
+                  {/* Question and Task Section Combined */}
+                  <div className="bg-gradient-to-br from-[#4285F4]/5 to-[#34A853]/5 rounded-2xl p-8 border border-[#4285F4]/20 dark:border-gray-700 shadow-lg">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="bg-[#4285F4] bg-opacity-10 rounded-lg p-2">
+                        <ChatBubbleLeftRightIcon className="w-6 h-6 text-[#4285F4]" />
+                      </div>
+                      <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                        {currentQuestion.question}
+                      </h3>
                     </div>
-                    
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                      {currentQuestion.question}
-                    </h3>
-                    <div className="mt-4 bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                      <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                        Görev
-                      </h4>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
+
+                    <div className="mt-6 space-y-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <RocketLaunchIcon className="w-5 h-5 text-[#34A853]" />
+                        <span className="text-lg font-semibold text-[#34A853] dark:text-[#34A853]">
+                          Görev
+                        </span>
+                      </div>
+                      <p className="text-gray-600 dark:text-gray-400 leading-relaxed pl-7">
                         {currentQuestion.task}
                       </p>
                     </div>
@@ -765,7 +843,7 @@ const SelfTestModal = ({ isOpen, closeModal, onComplete }: SelfTestModalProps) =
                       </h3>
                       <button
                         onClick={() => setShowHints(!showHints)}
-                        className="flex items-center gap-2 text-sm text-[#4285F4] hover:text-[#4285F4]/80"
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-[#4285F4] hover:text-[#4285F4]/80 border border-[#4285F4] hover:bg-[#4285F4]/5 transition-all duration-300"
                       >
                         <LightBulbIcon className="w-5 h-5" />
                         {showHints ? 'İpuçlarını Gizle' : 'İpuçlarını Göster'}
@@ -1030,7 +1108,8 @@ export default function Home() {
         throw new Error('Kullanıcı oluşturma hatası');
       }
 
-      const userData = await createResponse.json();
+      const responseData = await createResponse.json();
+      const userData = responseData.user; // API'den gelen user nesnesini al
       
       // Local storage'a kullanıcı bilgilerini kaydet
       localStorage.setItem('user', JSON.stringify(userData));
@@ -1080,6 +1159,18 @@ export default function Home() {
   const handleLevelClick = (level: Level) => {
     setSelectedLevel(level);
     setIsLevelModalOpen(true);
+  };
+
+  const handleLevelComplete = (newLevel: number) => {
+    setCurrentLevel(newLevel);
+    setLevels(prevLevels =>
+      prevLevels.map(l => ({
+        ...l,
+        isLocked: l.number > newLevel,
+        isCurrent: l.number === newLevel,
+        isCompleted: l.number < newLevel
+      }))
+    );
   };
 
   // Loading durumunda boş ekran göster
@@ -1412,7 +1503,7 @@ export default function Home() {
         <SelfTestModal
           isOpen={isTestModalOpen}
           closeModal={() => setIsTestModalOpen(false)}
-          onComplete={handleTestComplete}
+          onComplete={handleLevelComplete}
         />
       </main>
     );
@@ -1570,12 +1661,13 @@ export default function Home() {
         closeModal={() => setSelectedLevel(null)}
         level={selectedLevel}
         currentLevel={currentLevel}
+        onLevelComplete={handleLevelComplete}
       />
 
       <SelfTestModal
         isOpen={isTestModalOpen}
         closeModal={() => setIsTestModalOpen(false)}
-        onComplete={handleTestComplete}
+        onComplete={handleLevelComplete}
       />
 
       {selectedLevel && (

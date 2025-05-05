@@ -94,7 +94,9 @@ export async function GET(request: NextRequest) {
       levelInput: {
         level: parseInt(level),
         userInput: levelInput.userInput,
-        evaluation: levelInput.evaluation
+        score: levelInput.score || null,
+        feedback: levelInput.feedback || null,
+        suggestions: levelInput.suggestions || []
       }
     });
   } catch (error) {
