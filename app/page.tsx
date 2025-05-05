@@ -9,6 +9,8 @@ import { testQuestions, levelQuestions } from './data/questions';
 import type { TestQuestion, LevelQuestion } from './types/questions';
 import PromptEditor from './components/PromptEditor';
 import { toast } from 'react-hot-toast';
+import useWindowSize from 'react-use/lib/useWindowSize';
+import ReactConfetti from 'react-confetti';
 
 interface Level {
   number: number;
@@ -41,6 +43,11 @@ interface LevelInputResponse {
     feedback: string;
     suggestions: string[];
   };
+}
+
+interface CelebrationModalProps {
+  isOpen: boolean;
+  closeModal: () => void;
 }
 
 // Level Modal Component
@@ -931,6 +938,86 @@ const SelfTestModal = ({ isOpen, closeModal, onComplete }: SelfTestModalProps) =
   );
 };
 
+const CelebrationModal = ({ isOpen, closeModal }: CelebrationModalProps) => {
+  const { width, height } = useWindowSize();
+  const [isConfettiActive, setIsConfettiActive] = useState(true);
+
+  useEffect(() => {
+    if (isOpen) {
+      setIsConfettiActive(true);
+      // 10 saniye sonra konfetileri durdur
+      const timer = setTimeout(() => {
+        setIsConfettiActive(false);
+      }, 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50">
+      {isConfettiActive && (
+        <ReactConfetti
+          width={width}
+          height={height}
+          recycle={true}
+          numberOfPieces={500}
+          gravity={0.2}
+        />
+      )}
+      <div className="fixed inset-0 bg-black/25 backdrop-blur-sm" />
+      <div className="fixed inset-0 flex items-center justify-center p-4">
+        <div className="relative bg-white dark:bg-gray-800 rounded-2xl p-8 max-w-2xl w-full transform transition-all shadow-xl">
+          <div className="absolute -top-20 left-1/2 transform -translate-x-1/2">
+            <div className="w-40 h-40 bg-gradient-to-r from-[#4285F4] via-[#34A853] to-[#FBBC05] rounded-full blur-3xl opacity-30" />
+          </div>
+          
+          <div className="text-center space-y-8 relative">
+            <div className="space-y-4">
+              <h2 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#4285F4] via-[#34A853] to-[#FBBC05]">
+                TEBRİKLER! 🎉
+              </h2>
+              <p className="text-2xl font-medium text-gray-900 dark:text-gray-100">
+                Tüm Seviyeleri Tamamladınız!
+              </p>
+            </div>
+
+            <div className="bg-gradient-to-br from-[#4285F4]/5 to-[#34A853]/5 rounded-xl p-6 border border-[#4285F4]/20">
+              <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+                Artık bir prompt mühendisliği uzmanısınız! Tüm seviyeleri başarıyla tamamlayarak olağanüstü bir başarıya imza attınız. 
+                Bu yolculukta öğrendiğiniz becerileri kullanarak harika promptlar yazabilirsiniz.
+              </p>
+            </div>
+
+            <div className="flex flex-col items-center gap-4">
+              <div className="flex items-center gap-2">
+                <SparklesIcon className="w-6 h-6 text-yellow-500" />
+                <span className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                  30/30 Seviye Tamamlandı
+                </span>
+              </div>
+              <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-[#4285F4] to-[#34A853] transition-all duration-1000"
+                  style={{ width: '100%' }}
+                />
+              </div>
+            </div>
+
+            <button
+              onClick={closeModal}
+              className="px-8 py-3 rounded-xl font-medium bg-gradient-to-r from-[#4285F4] to-[#34A853] text-white hover:opacity-90 transition-all duration-300 transform hover:scale-105"
+            >
+              Harika!
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function Home() {
   const [levels, setLevels] = useState<Level[]>(
     Array.from({ length: 30 }, (_, i) => ({
@@ -956,6 +1043,7 @@ export default function Home() {
   const [hasTurkishChars, setHasTurkishChars] = useState<boolean>(false);
   const [hasInvalidChars, setHasInvalidChars] = useState<boolean>(false);
   const [showPromptEditor, setShowPromptEditor] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
 
   const handleUsernameChange = async (value: string) => {
     setUsername(value);
@@ -1054,31 +1142,59 @@ export default function Home() {
 
   const handleTestComplete = async (level: number) => {
     try {
-      // Test sonucunu API'ye gönder
-      const testResultResponse = await fetch('/api/users/test-result', {
+      if (!username) {
+        throw new Error('Kullanıcı adı bulunamadı');
+      }
+
+      // Önce kullanıcının var olup olmadığını kontrol et
+      const checkUserResponse = await fetch(`/api/users?username=${encodeURIComponent(username)}`);
+      const checkUserData = await checkUserResponse.json();
+      
+      let userResponse;
+      // Kullanıcı yoksa oluştur
+      if (!checkUserData.exists) {
+        userResponse = await fetch('/api/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username })
+        });
+
+        if (!userResponse.ok) {
+          throw new Error('Kullanıcı oluşturma hatası');
+        }
+
+        // Yeni oluşturulan kullanıcı bilgilerini al
+        const newUserData = await userResponse.json();
+        // LocalStorage'a kaydet
+        localStorage.setItem('user', JSON.stringify(newUserData.user));
+      }
+
+      // Önceki seviyeleri tamamlanmış olarak işaretle ve yeni seviyeyi ayarla
+      const updateLevelResponse = await fetch('/api/users/level', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           username,
-          testScore: level / 30, // Seviyeyi 0-1 aralığına çevir
-          calculatedLevel: level
+          newLevel: level,
+          updateCompletedLevels: true // Önceki seviyeleri tamamlanmış olarak işaretle
         })
       });
 
-      if (!testResultResponse.ok) {
-        throw new Error('Test sonucu kaydetme hatası');
+      if (!updateLevelResponse.ok) {
+        throw new Error('Seviye güncelleme hatası');
       }
 
-      const userData = await testResultResponse.json();
-      
-      // Local storage'a kullanıcı bilgilerini kaydet
-      localStorage.setItem('user', JSON.stringify(userData.user));
-      
+      const updatedUserData = await updateLevelResponse.json();
+
+      // Güncellenmiş kullanıcı bilgilerini localStorage'a kaydet
+      localStorage.setItem('user', JSON.stringify(updatedUserData.user));
+
+      // State'leri güncelle
       setCurrentLevel(level);
+      setUserData(updatedUserData.user);
       setHasStarted(true);
-      setUserData(userData.user);
-      
-      // Seviyeleri güncelle
+
+      // Tüm seviyeleri güncelle
       setLevels(prevLevels =>
         prevLevels.map(l => ({
           ...l,
@@ -1087,11 +1203,13 @@ export default function Home() {
           isCompleted: l.number < level
         }))
       );
-      
+
       setIsTestModalOpen(false);
+      toast.success(`Seviyeniz ${level} olarak belirlendi!`);
+
     } catch (error) {
       console.error('Test tamamlama sırasında hata:', error);
-      alert('Bir hata oluştu. Lütfen tekrar deneyin.');
+      toast.error('Bir hata oluştu. Lütfen tekrar deneyin.');
     }
   };
 
@@ -1171,6 +1289,11 @@ export default function Home() {
         isCompleted: l.number < newLevel
       }))
     );
+
+    // Eğer 30. seviye tamamlandıysa kutlama modalını göster
+    if (newLevel === 30) {
+      setShowCelebration(true);
+    }
   };
 
   // Loading durumunda boş ekran göster
@@ -1503,7 +1626,7 @@ export default function Home() {
         <SelfTestModal
           isOpen={isTestModalOpen}
           closeModal={() => setIsTestModalOpen(false)}
-          onComplete={handleLevelComplete}
+          onComplete={handleTestComplete}
         />
       </main>
     );
@@ -1512,27 +1635,29 @@ export default function Home() {
   // Kullanıcı başlamışsa seviye ekranını göster
   return (
     <>
-      <div className="absolute top-4 left-4 text-white z-50 space-y-2">
+      <div className="absolute top-4 left-4 z-50">
         {userData ? (
-          <>
-            <div className="space-y-1">
-              <div className="text-lg">{userData.username}</div>
-              <div className="text-sm opacity-80">Seviye: {userData.currentLevel || 1}</div>
-              <div className="text-sm opacity-80">Skor: {userData.score || 0}</div>
+          <div className="flex items-center gap-4 bg-gray-800/90 backdrop-blur-sm px-4 py-3 rounded-xl border border-gray-700/50 shadow-lg">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#4285F4] to-[#34A853] flex items-center justify-center text-white font-medium">
+                {userData.username.charAt(0).toUpperCase()}
+              </div>
+              <span className="text-gray-100 font-medium">{userData.username}</span>
             </div>
+            <div className="h-5 w-px bg-gray-700/50"></div>
             <button
               onClick={handleLogout}
-              className="px-3 py-1 bg-red-500 hover:bg-red-600 rounded text-sm transition-colors"
+              className="text-gray-400 hover:text-gray-200 transition-colors duration-200 text-sm flex items-center gap-2"
             >
               Çıkış Yap
             </button>
-          </>
+          </div>
         ) : (
           username
         )}
       </div>
-    <main className="min-h-screen bg-gray-50 dark:bg-gray-900 p-8">
-      {/* Progress ve Test Butonu */}
+      <main className="min-h-screen bg-gray-50 dark:bg-gray-900 p-8">
+        {/* Progress ve Test Butonu */}
         <div className="fixed top-6 right-6 bg-white/90 backdrop-blur-sm dark:bg-gray-800/90 rounded-xl shadow-lg p-4 z-40">
         <div className="text-gray-800 dark:text-gray-100">
             <div className="flex items-center gap-2 mb-3">
@@ -1667,7 +1792,7 @@ export default function Home() {
       <SelfTestModal
         isOpen={isTestModalOpen}
         closeModal={() => setIsTestModalOpen(false)}
-        onComplete={handleLevelComplete}
+        onComplete={handleTestComplete}
       />
 
       {selectedLevel && (
@@ -1678,6 +1803,11 @@ export default function Home() {
           onClose={() => setShowPromptEditor(false)}
         />
       )}
+      
+      <CelebrationModal
+        isOpen={showCelebration}
+        closeModal={() => setShowCelebration(false)}
+      />
     </main>
     </>
   );
