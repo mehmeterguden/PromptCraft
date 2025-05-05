@@ -11,6 +11,10 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Prompt Öğrenme Platformu",
   description: "Prompt mühendisliği öğrenme ve pratik yapma platformu",
+  icons: {
+    icon: { url: '/favicon.svg', type: 'image/svg+xml' },
+    shortcut: '/favicon.svg',
+  },
 };
 
 export default function RootLayout({

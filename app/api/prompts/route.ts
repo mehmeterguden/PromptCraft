@@ -5,11 +5,9 @@ import User from '@/app/models/User';
 interface LevelInput {
   level: number;
   userInput: string;
-  evaluation?: {
-    score: number;
-    feedback: string;
-    suggestions: string[];
-  };
+  score?: number;
+  feedback?: string;
+  suggestions?: string[];
 }
 
 interface LevelPrompt {
@@ -19,40 +17,6 @@ interface LevelPrompt {
     score: number;
     feedback: string;
     suggestions: string[];
-  };
-}
-
-// Prompt değerlendirme fonksiyonu
-function evaluatePrompt(userInput: string) {
-  // Burada gerçek bir AI değerlendirmesi yapılabilir
-  // Şimdilik örnek bir değerlendirme döndürüyoruz
-  const score = Math.floor(Math.random() * 41) + 60; // 60-100 arası rastgele puan
-  
-  const feedbacks = [
-    "Prompt'unuz temel gereksinimleri karşılıyor ancak geliştirilebilir.",
-    "İyi bir başlangıç! Daha spesifik yönergeler ekleyebilirsiniz.",
-    "Prompt'unuz açık ve anlaşılır, ancak daha detaylı olabilir.",
-    "Güzel bir prompt! Birkaç küçük iyileştirme ile mükemmel olabilir."
-  ];
-
-  const allSuggestions = [
-    "Daha spesifik çıktı formatları tanımlayın",
-    "Edge case'leri (sınır durumları) belirtin",
-    "Kullanıcı etkileşimini daha detaylı açıklayın",
-    "Hata durumlarını nasıl ele alacağınızı belirtin",
-    "Prompt'a örnek kullanım senaryoları ekleyin",
-    "Sistem kısıtlamalarını belirtin"
-  ];
-
-  // Rastgele 2-3 öneri seç
-  const suggestionCount = Math.floor(Math.random() * 2) + 2;
-  const shuffledSuggestions = [...allSuggestions].sort(() => Math.random() - 0.5);
-  const suggestions = shuffledSuggestions.slice(0, suggestionCount);
-
-  return {
-    score,
-    feedback: feedbacks[Math.floor(Math.random() * feedbacks.length)],
-    suggestions
   };
 }
 
@@ -114,7 +78,7 @@ export async function POST(request: NextRequest) {
     await connectDB();
     
     const body = await request.json();
-    const { username, level, userInput } = body;
+    const { username, level, userInput, score, feedback, suggestions } = body;
 
     console.log('Request body:', body);
 
@@ -124,12 +88,6 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-
-    // Evaluate the prompt first
-    const evaluation = evaluatePrompt(userInput);
-    console.log('Evaluation result:', evaluation);
-
-    const levelNumber = parseInt(level);
 
     // Find the user first
     const user = await User.findOne({ username });
@@ -143,16 +101,16 @@ export async function POST(request: NextRequest) {
 
     // Find the index of existing level input
     const existingInputIndex = user.levelInputs.findIndex(
-      (input: LevelInput) => input.level === levelNumber
+      (input: LevelInput) => input.level === level
     );
 
-    // Yeni level input objesi - evaluation verilerini direkt içine yerleştiriyoruz
+    // Yeni level input objesi
     const newLevelInput = {
-      level: levelNumber,
-      userInput: userInput,
-      score: evaluation.score,
-      feedback: evaluation.feedback,
-      suggestions: evaluation.suggestions
+      level,
+      userInput,
+      score,
+      feedback,
+      suggestions
     };
 
     if (existingInputIndex !== -1) {
@@ -166,10 +124,10 @@ export async function POST(request: NextRequest) {
     // Eğer kullanıcı 70 veya üzeri puan aldıysa ve bu seviye şu anki seviyesiyse
     // bir sonraki seviyeye geç
     let levelCompleted = false;
-    if (evaluation.score >= 70 && levelNumber === user.currentLevel) {
-      user.currentLevel = levelNumber + 1;
-      if (!user.completedLevels.includes(levelNumber)) {
-        user.completedLevels.push(levelNumber);
+    if (score >= 70 && level === user.currentLevel) {
+      user.currentLevel = level + 1;
+      if (!user.completedLevels.includes(level)) {
+        user.completedLevels.push(level);
       }
       levelCompleted = true;
     }
@@ -193,7 +151,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Delete user's prompt
+// Delete user's prompt for a specific level
 export async function DELETE(request: NextRequest) {
   try {
     await connectDB();
@@ -218,10 +176,15 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Remove the level input
-    user.levelInputs = user.levelInputs.filter((input: LevelInput) => input.level !== parseInt(level));
+    user.levelInputs = user.levelInputs.filter(
+      (input: LevelInput) => input.level !== parseInt(level)
+    );
+
     await user.save();
 
-    return NextResponse.json({ message: 'Prompt deleted successfully' });
+    return NextResponse.json({
+      message: 'Prompt deleted successfully'
+    });
   } catch (error) {
     console.error('Error deleting prompt:', error);
     return NextResponse.json(

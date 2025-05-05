@@ -51,11 +51,11 @@ def analyze_prompt(question: str, prompt: str, user_input: str, question_number:
 
     {{
         "skor": <0-100 arası sayı>,
-        "feedback": "<max 250 karakterlik detaylı türkçe geri bildirim>",
+        "feedback": "<max 350 karakterlik detaylı türkçe geri bildirim>",
         "suggestions": [
-            "<max 100 karakterlik öneri 1>",
-            "<max 100 karakterlik öneri 2>",
-            "<max 100 karakterlik öneri 3 (opsiyonel)>"
+            "<max 150 karakterlik öneri 1>",
+            "<max 150 karakterlik öneri 2>",
+            "<max 150 karakterlik öneri 3 (opsiyonel)>"
         ]
     }}
 
@@ -122,13 +122,13 @@ def analyze_prompt(question: str, prompt: str, user_input: str, question_number:
        - Olumlu yönleri vurgula
        - Geliştirme önerilerini nazikçe belirt
        - Motive edici bir dil kullan
-       - Max 250 karakter kullan
+       - Max 350 karakter kullan
     
     3. Öneriler:
        - Zorluk seviyesine uygun öneriler ver
        - En az 2, en fazla 3 yapıcı öneri sun
        - Her öneri uygulanabilir ve net olmalı
-       - Her öneri max 100 karakter olmalı
+       - Her öneri max 150 karakter olmalı
        - Geliştirici ve motive edici öneriler sun
     
     NOT:

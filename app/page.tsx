@@ -194,9 +194,12 @@ const LevelModal = ({ isOpen, closeModal, level, currentLevel, onLevelComplete }
       const evaluationData = await evaluationResponse.json();
       console.log('Evaluation response:', evaluationData);
 
-      if (!evaluationData || !evaluationData.skor) {
-        throw new Error('Geçersiz değerlendirme yanıtı');
+      if (!evaluationData || (typeof evaluationData.skor !== 'number' && typeof evaluationData.score !== 'number')) {
+        throw new Error('Geçersiz değerlendirme yanıtı: Skor bulunamadı');
       }
+
+      // Normalize the score property
+      const score = evaluationData.skor || evaluationData.score || 0;
 
       // Prompt'u kaydet
       console.log('Sending request to API...');
@@ -209,7 +212,7 @@ const LevelModal = ({ isOpen, closeModal, level, currentLevel, onLevelComplete }
           username,
           level: level.number,
           userInput: userInput.trim(),
-          score: evaluationData.skor,
+          score: score,
           feedback: evaluationData.feedback,
           suggestions: evaluationData.suggestions
         }),
