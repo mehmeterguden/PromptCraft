@@ -1,57 +1,56 @@
-# PromptCraft
+# Prompt Öğrenme Platformu
 
-AI ile Oyunlaştırılmış Prompt Öğrenme Platformu
-
-## 🚀 Proje Hakkında
-
-PromptCraft, kullanıcılara yapay zeka ile etkili prompt yazmayı etkileşimli ve seviye tabanlı bir sistemle öğreten bir platformdur. Her seviyede AI tarafından verilen senaryolara göre kullanıcı prompt yazar, sistem bunu Gemini API ile değerlendirir, puanlar ve geribildirim sunar.
+Yapay zeka ile etkili prompt yazmayı öğreten interaktif bir eğitim platformu. Google'ın Gemini API'sini kullanarak, kullanıcıların prompt'larını test etmelerine ve optimize etmelerine olanak sağlar.
 
 ## 🛠️ Teknolojiler
 
-- Backend: FastAPI, Python
-- Frontend: Next.js, React, Tailwind CSS
-- AI: Google Gemini API
-
-## 📦 Kurulum
-
 ### Backend
-
-1. Python 3.8+ yüklü olmalıdır
-2. Gerekli paketleri yükleyin:
-```bash
-cd backend
-pip install -r requirements.txt
-```
-3. `.env` dosyası oluşturun ve Gemini API anahtarınızı ekleyin:
-```
-GEMINI_API_KEY=your_api_key_here
-```
-4. Uygulamayı başlatın:
-```bash
-uvicorn app.main:app --reload
-```
+- FastAPI (Python web framework)
+- MongoDB (Veritabanı)
+- Google Generative AI (Gemini API)
+- Python 3.8+
 
 ### Frontend
+- Next.js 14
+- React 18
+- TailwindCSS
+- TypeScript
 
-1. Node.js 16+ yüklü olmalıdır
-2. Gerekli paketleri yükleyin:
+## 📋 Gereksinimler
+
+- Node.js 18+
+- Python 3.8+
+- MongoDB
+- Google Cloud API Key (Gemini için)
+
+## 🚀 Uygulamayı Çalıştırma
+
+### Backend'i Çalıştırma
+
+Backend'i başlatmak için:
 ```bash
-cd frontend
-npm install
+cd backend
+python3 run.py
 ```
-3. Uygulamayı başlatın:
+
+Backend `http://localhost:8000` adresinde çalışacaktır.
+
+### Frontend'i Çalıştırma
+
 ```bash
 npm run dev
 ```
 
-## 🎯 Özellikler
+Frontend `http://localhost:3000` adresinde çalışacaktır.
 
-- Seviye tabanlı prompt öğrenme sistemi
-- AI destekli değerlendirme ve geribildirim
-- Detaylı puanlama sistemi
-- Geliştirilmiş prompt önerileri
-- Modern ve kullanıcı dostu arayüz
+## ✨ Özellikler
 
-## 📝 Lisans
+- Seviye bazlı prompt öğrenme sistemi
+- Her seviyede farklı zorlukta prompt yazma görevleri
+- Gemini AI ile anında prompt değerlendirme
+- Detaylı puan ve geri bildirim sistemi
+- Başarılı prompt örnekleri ile öğrenme
+- Kişisel gelişim takibi ve istatistikler
+- Prompt yazma ipuçları ve en iyi uygulamalar
+- Kullanıcı dostu, modern arayüz
 
-MIT 
