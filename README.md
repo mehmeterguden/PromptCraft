@@ -29,8 +29,7 @@ Yapay zeka ile etkili prompt yazmayı öğreten interaktif bir eğitim platformu
 
 Backend'i başlatmak için:
 ```bash
-cd backend
-python3 run.py
+cd backend && python3 -m uvicorn main:app --reload
 ```
 
 Backend `http://localhost:8000` adresinde çalışacaktır.

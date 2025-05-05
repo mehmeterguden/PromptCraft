@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { LockClosedIcon, ExclamationTriangleIcon, ChevronDownIcon, ChevronUpIcon, LightBulbIcon, SparklesIcon } from '@heroicons/react/24/outline';
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
@@ -65,6 +65,7 @@ const LevelModal = ({ isOpen, closeModal, level, currentLevel, onLevelComplete }
   } | null>(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Modal açıldığında veya level değiştiğinde state'i sıfırla
   useEffect(() => {
@@ -76,7 +77,12 @@ const LevelModal = ({ isOpen, closeModal, level, currentLevel, onLevelComplete }
       setIsSubmitted(false);
       setFeedback(null);
       setShowSuggestions(false);
-      setIsAnalyzing(false); // Analiz durumunu sıfırla
+      setIsAnalyzing(false);
+      
+      // Textarea'ya focus yap
+      setTimeout(() => {
+        textareaRef.current?.focus();
+      }, 100);
       
       // Eğer level varsa, input değerini getir
       if (level) {
@@ -375,22 +381,21 @@ const LevelModal = ({ isOpen, closeModal, level, currentLevel, onLevelComplete }
                         </h3>
                       </div>
 
-                      <div className="mt-6 space-y-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <RocketLaunchIcon className="w-5 h-5 text-[#34A853]" />
-                          <span className="text-lg font-semibold text-[#34A853] dark:text-[#34A853]">
-                            Görev
-                          </span>
+                      <div className="mt-6">
+                        <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl p-6 border border-[#4285F4]/10 dark:border-gray-700/50 shadow-md">
+                          <div className="relative">
+                            <div className="absolute -left-3 top-0 h-full w-1 bg-[#4285F4] rounded-full shadow-[0_0_8px_rgba(66,133,244,0.3)] dark:shadow-[0_0_8px_rgba(66,133,244,0.15)]"></div>
+                            <p className="text-gray-600 dark:text-gray-300 leading-relaxed pl-4">
+                              {levelQuestion.task}
+                            </p>
+                          </div>
                         </div>
-                        <p className="text-gray-600 dark:text-gray-400 leading-relaxed pl-7">
-                          {levelQuestion.task}
-                        </p>
                       </div>
                     </div>
 
                     {/* Prompt Input Section */}
                     <div className="space-y-4">
-                      <div className="flex justify-between items-center">
+                      <div className="flex justify-between items-center mt-8">
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                           Promptunuzu Yazın
                         </h3>
@@ -420,6 +425,7 @@ const LevelModal = ({ isOpen, closeModal, level, currentLevel, onLevelComplete }
 
                       <div className="relative">
                         <textarea
+                          ref={textareaRef}
                           value={userInput}
                           onChange={(e) => setUserInput(e.target.value)}
                           placeholder="Promptunuzu buraya yazın..."
@@ -631,6 +637,15 @@ const SelfTestModal = ({ isOpen, closeModal, onComplete }: SelfTestModalProps) =
       suggestions: string[];
     }>;
   } | null>(null);
+  const testTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (isOpen && !showResults) {
+      setTimeout(() => {
+        testTextareaRef.current?.focus();
+      }, 100);
+    }
+  }, [isOpen, currentQuestionIndex, showResults]);
 
   const currentQuestion = testQuestions[currentQuestionIndex];
   const progress = ((currentQuestionIndex + 1) / testQuestions.length) * 100;
@@ -898,22 +913,21 @@ const SelfTestModal = ({ isOpen, closeModal, onComplete }: SelfTestModalProps) =
                       </h3>
                     </div>
 
-                    <div className="mt-6 space-y-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <RocketLaunchIcon className="w-5 h-5 text-[#34A853]" />
-                        <span className="text-lg font-semibold text-[#34A853] dark:text-[#34A853]">
-                          Görev
-                        </span>
+                    <div className="mt-6">
+                      <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl p-6 border border-[#4285F4]/10 dark:border-gray-700/50 shadow-md">
+                        <div className="relative">
+                          <div className="absolute -left-3 top-0 h-full w-1 bg-[#4285F4] rounded-full shadow-[0_0_8px_rgba(66,133,244,0.3)] dark:shadow-[0_0_8px_rgba(66,133,244,0.15)]"></div>
+                          <p className="text-gray-600 dark:text-gray-300 leading-relaxed pl-4">
+                            {currentQuestion.task}
+                          </p>
+                        </div>
                       </div>
-                      <p className="text-gray-600 dark:text-gray-400 leading-relaxed pl-7">
-                        {currentQuestion.task}
-                      </p>
                     </div>
                   </div>
 
                   {/* Prompt Input Section */}
                   <div className="space-y-4">
-                    <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-center mt-8">
                       <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                         Promptunuzu Yazın
                       </h3>
@@ -943,6 +957,7 @@ const SelfTestModal = ({ isOpen, closeModal, onComplete }: SelfTestModalProps) =
 
                     <div className="relative">
                       <textarea
+                        ref={testTextareaRef}
                         value={prompt}
                         onChange={(e) => setPrompt(e.target.value)}
                         placeholder="Promptunuzu buraya yazın..."
