@@ -1,0 +1,37 @@
+{
+    "1": {
+        "id": 1,
+        "title": "Basit Hikaye İsteği",
+        "description": "AI'dan eğlenceli bir hikaye isteyin",
+        "expected_goal": "Kullanıcı, AI'dan belirli bir konuda eğlenceli ve yaratıcı bir hikaye talep etmelidir.",
+        "difficulty": "Başlangıç"
+    },
+    "2": {
+        "id": 2,
+        "title": "Bilgi Araştırma",
+        "description": "Belirli bir konuda detaylı bilgi isteyin",
+        "expected_goal": "Kullanıcı, belirli bir konuda kapsamlı ve doğru bilgi almak için etkili bir prompt yazmalıdır.",
+        "difficulty": "Orta"
+    },
+    "3": {
+        "id": 3,
+        "title": "Kod Yazma Yardımı",
+        "description": "Belirli bir programlama görevi için yardım isteyin",
+        "expected_goal": "Kullanıcı, belirli bir programlama problemi için net ve spesifik bir prompt yazmalıdır.",
+        "difficulty": "İleri"
+    },
+    "4": {
+        "id": 4,
+        "title": "Yaratıcı İçerik Üretimi",
+        "description": "Yaratıcı bir içerik (şiir, şarkı, vb.) isteyin",
+        "expected_goal": "Kullanıcı, belirli bir türde yaratıcı içerik üretmek için detaylı ve ilham verici bir prompt yazmalıdır.",
+        "difficulty": "Orta"
+    },
+    "5": {
+        "id": 5,
+        "title": "Karmaşık Problem Çözümü",
+        "description": "Karmaşık bir problemi çözmek için yardım isteyin",
+        "expected_goal": "Kullanıcı, karmaşık bir problemi çözmek için sistematik ve detaylı bir prompt yazmalıdır.",
+        "difficulty": "İleri"
+    }
+} 
