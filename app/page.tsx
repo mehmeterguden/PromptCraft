@@ -463,6 +463,38 @@ const LevelModal = ({ isOpen, closeModal, level, currentLevel, onLevelComplete }
                         </button>
                       </div>
 
+                      {/* Analiz Durumu - Yeni Tasarım */}
+                      {isAnalyzing && (
+                        <div className="mt-4 flex items-center justify-center">
+                          <div className="bg-gradient-to-br from-blue-50/80 via-indigo-50/80 to-blue-50/80 dark:from-blue-900/20 dark:via-indigo-900/20 dark:to-blue-900/20 backdrop-blur-sm px-8 py-5 rounded-2xl border border-blue-100 dark:border-blue-800/50 shadow-lg">
+                            <div className="flex items-center gap-5">
+                              <div className="relative flex items-center justify-center">
+                                {/* Ana dönen halka */}
+                                <div className="w-10 h-10 border-[3px] border-blue-100 dark:border-blue-800/50 border-t-blue-500 dark:border-t-blue-400 rounded-full animate-[spin_1s_ease-in-out_infinite]">
+                                  <div className="absolute inset-0 flex items-center justify-center">
+                                    <div className="w-6 h-6 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 dark:from-blue-400 dark:to-indigo-400 opacity-20 animate-pulse"></div>
+                                  </div>
+                                </div>
+                                {/* AI ikonu */}
+                                <svg className="absolute w-4 h-4 text-blue-500 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                </svg>
+                              </div>
+                              <div className="flex flex-col">
+                                <p className="text-base font-semibold text-gray-800 dark:text-gray-200">
+                                  AI Tarafından Analiz Ediliyor
+                                  <span className="inline-flex ml-1">
+                                    <span className="animate-bounce">.</span>
+                                    <span className="animate-bounce" style={{ animationDelay: '0.2s' }}>.</span>
+                                    <span className="animate-bounce" style={{ animationDelay: '0.4s' }}>.</span>
+                                  </span>
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
                       {/* Feedback Section */}
                       <div className="mt-8 space-y-6">
                         {feedback && (
