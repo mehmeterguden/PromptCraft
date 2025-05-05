@@ -64,6 +64,7 @@ const LevelModal = ({ isOpen, closeModal, level, currentLevel, onLevelComplete }
     suggestions?: string[];
   } | null>(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   // Modal açıldığında veya level değiştiğinde state'i sıfırla
   useEffect(() => {
@@ -75,6 +76,7 @@ const LevelModal = ({ isOpen, closeModal, level, currentLevel, onLevelComplete }
       setIsSubmitted(false);
       setFeedback(null);
       setShowSuggestions(false);
+      setIsAnalyzing(false); // Analiz durumunu sıfırla
       
       // Eğer level varsa, input değerini getir
       if (level) {
@@ -143,6 +145,8 @@ const LevelModal = ({ isOpen, closeModal, level, currentLevel, onLevelComplete }
       return;
     }
 
+    setIsAnalyzing(true); // Analiz başladığını belirt
+
     try {
       const savedUser = localStorage.getItem('user');
       if (!savedUser || !level) {
@@ -155,6 +159,34 @@ const LevelModal = ({ isOpen, closeModal, level, currentLevel, onLevelComplete }
       console.log('username from userData:', username);
       console.log('current level:', level?.number);
 
+      // Önce Gemini API'ye istek gönder
+      const evaluationResponse = await fetch('/api/evaluate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          question: levelQuestion?.question || '',
+          prompt: levelQuestion?.task || '',
+          userInput: userInput.trim(),
+          questionNumber: level.number
+        }),
+      });
+
+      if (!evaluationResponse.ok) {
+        const errorData = await evaluationResponse.json();
+        console.error('Evaluation error:', errorData);
+        throw new Error(errorData.error || 'Değerlendirme başarısız oldu');
+      }
+
+      const evaluationData = await evaluationResponse.json();
+      console.log('Evaluation response:', evaluationData);
+
+      if (!evaluationData || !evaluationData.skor) {
+        throw new Error('Geçersiz değerlendirme yanıtı');
+      }
+
+      // Prompt'u kaydet
       console.log('Sending request to API...');
       const response = await fetch('/api/prompts', {
         method: 'POST',
@@ -164,7 +196,10 @@ const LevelModal = ({ isOpen, closeModal, level, currentLevel, onLevelComplete }
         body: JSON.stringify({
           username,
           level: level.number,
-          userInput: userInput.trim()
+          userInput: userInput.trim(),
+          score: evaluationData.skor,
+          feedback: evaluationData.feedback,
+          suggestions: evaluationData.suggestions
         }),
       });
 
@@ -185,14 +220,14 @@ const LevelModal = ({ isOpen, closeModal, level, currentLevel, onLevelComplete }
         setUserInput(updatedData.levelInput.userInput || '');
         setInitialUserInput(updatedData.levelInput.userInput || '');
         
-        const newScore = updatedData.levelInput.score || 0;
+        const newScore = evaluationData.skor || 0;
         const isPassing = newScore >= 70;
         
         setFeedback({
           success: isPassing,
-          message: updatedData.levelInput.feedback || '',
+          message: evaluationData.feedback || '',
           score: newScore,
-          suggestions: updatedData.levelInput.suggestions || []
+          suggestions: evaluationData.suggestions || []
         });
 
         // Eğer mevcut seviyedeyse ve skor 70'in üzerindeyse bir sonraki seviyeyi aktif et
@@ -234,10 +269,12 @@ const LevelModal = ({ isOpen, closeModal, level, currentLevel, onLevelComplete }
       }
 
       setIsSubmitted(true);
+      setIsAnalyzing(false); // Analiz tamamlandı
 
     } catch (error) {
       console.error('Error saving prompt:', error);
       toast.error('Prompt kaydedilirken bir hata oluştu!');
+      setIsAnalyzing(false); // Hata durumunda analizi sonlandır
     }
   };
 

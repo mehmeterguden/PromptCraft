@@ -1,347 +1,348 @@
 import { TestQuestion, LevelQuestion } from '../types/questions';
 
 // Mevcut örnek Test Soruları (Bunlar giriş seviyesi prompt örnekleri sunmak için duruyor)
+// Bunlar değişmedi, olduğu gibi kalıyor.
 export const testQuestions: TestQuestion[] = [
-  {
-    difficulty: 'Kolay',
-    question: 'Bir e-ticaret sitesi için ürün açıklaması yazan bir AI promptu oluşturun.',
-    task: 'Hayali bir e-ticaret sitesi için satılacak bir ürünün (örn: akıllı saat, kahve makinesi) detaylı, ikna edici ve SEO dostu bir açıklamasını üretecek bir AI promptu yazın. Açıklamalar hem bilgilendirici hem de satış odaklı olmalı.',
-    hints: [
-      'Promptunuzda ürünün özelliklerini ve müşteriye sağlayacağı faydaları vurgulamasını isteyin.',
-      'Hedef kitleyi belirtin (örn: teknoloji meraklıları, ev hanımları).',
-      'AI\'nın kullanması gereken ton ve üslup tercihlerini ekleyin (örn: neşeli, profesyonel, samimi).',
-      'İsteğe bağlı olarak açıklamanın kelime sayısı sınırını belirtin.'
-    ]
-  },
-  {
-    difficulty: 'Orta',
-    question: 'Bir blog yazısı için araştırma yapacak bir AI asistanını yönlendiren bir prompt yazın.',
-    task: 'Belirli bir konu (örn: yapay zekanın geleceği, iklim değişikliğinin etkileri) hakkında kapsamlı, güncel ve güvenilir kaynaklara dayalı bilgi toplayacak ve bunu özetleyecek bir AI asistanını yönlendiren bir prompt yazın.',
-    hints: [
-      'Promptunuzda araştırılacak konuyu çok net ve spesifik olarak belirtin.',
-      'AI\'dan hangi tür kaynakları kullanmasını istediğinizi ekleyin (örn: akademik makaleler, resmi raporlar, haber siteleri).',
-      'Araştırma sonucunun hangi formatta (örn: madde işaretli özet, paragraf) sunulmasını istediğinizi tanımlayın.',
-      'İsteğe bağlı olarak AI\'dan kaynakların güvenilirliğini nasıl doğrulaması gerektiğine dair kriterler ekleyin.'
-    ]
-  },
-  {
-    difficulty: 'Zor',
-    question: 'Büyük bir veri setinde anomali tespiti yapacak bir AI sistemini yönlendiren bir prompt oluşturun.',
-    task: 'Büyük bir veri setindeki (örn: müşteri işlem verileri, sensör okumaları) anormal (beklenmedik veya sıra dışı) değerleri tespit edip, bu anomalileri raporlayacak bir AI sistemini yönlendiren detaylı bir prompt yazın. Sistem hem istatistiksel hem de bağlamsal anomalileri bulabilmeli.',
-    hints: [
-      'Promptunuzda AI\'dan hangi tür anomalileri (örn: çok yüksek/düşük değerler, beklenmedik desenler) tespit etmesini istediğinizi tanımlayın.',
-      'Analiz parametrelerini belirtin (örn: hangi sütunlar incelenecek, hangi istatistiksel yöntemler kullanılabilir).',
-      'Anomali raporunun hangi formatta (örn: anomali listesi, açıklama, olası nedenler) detaylandırılmasını istediğinizi belirtin.',
-      'Yanlış pozitifleri (gerçekte anomali olmayanları) minimize etmek için AI\'nın dikkate alması gereken ek kriterler veya eşikler ekleyin.'
-    ]
-  }
+    {
+        difficulty: 'Kolay',
+        question: 'Bir e-ticaret sitesi için ürün açıklaması yazan bir AI promptu oluşturun.',
+        task: 'Hayali bir e-ticaret sitesi için satılacak bir ürünün (örn: akıllı saat, kahve makinesi) detaylı, ikna edici ve SEO dostu bir açıklamasını üretecek bir AI promptu yazın. Açıklamalar hem bilgilendirici hem de satış odaklı olmalı.',
+        hints: [
+          'Promptunuzda AI\'dan ürünün temel özelliklerini ve müşteriye sağlayacağı faydaları vurgulamasını isteyin.',
+          'Hedef kitleyi (örn: teknoloji meraklıları, ev hanımları) belirtmek, AI\'nın daha uygun bir dil kullanmasına yardımcı olur.',
+          'AI\'nın kullanmasını istediğiniz ton ve üslup tercihlerini (örn: neşeli, profesyonel, samimi) promptunuza ekleyin.',
+        ]
+      },
+      {
+        difficulty: 'Orta',
+        question: 'Bir blog yazısı için araştırma yapacak bir AI asistanını yönlendiren bir prompt yazın.',
+        task: 'Belirli bir konu (örn: yapay zekanın geleceği, iklim değişikliğinin etkileri) hakkında kapsamlı, güncel ve güvenilir kaynaklara dayalı bilgi toplayacak ve bunu özetleyecek bir AI asistanını yönlendiren bir prompt yazın.',
+        hints: [
+          'Promptunuzda araştırılacak konuyu mümkün olduğunca net ve spesifik olarak tanımlayın.',
+          'AI\'dan hangi tür kaynakları (örn: akademik makaleler, resmi raporlar, güvenilir haber siteleri) tercih etmesini istediğinizi belirtin.',
+          'Araştırma sonucunun hangi formatta (örn: madde işaretli özet, kısa paragraflar, anahtar çıkarımlar) sunulmasını istediğinizi açıklayın.',
+        ]
+      },
+      {
+        difficulty: 'Zor',
+        question: 'Büyük bir veri setinde anomali tespiti yapacak bir AI sistemini yönlendiren bir prompt oluşturun.',
+        task: 'Büyük bir veri setindeki (örn: müşteri işlem verileri, sensör okumaları) anormal (beklenmedik veya sıra dışı) değerleri tespit edip, bu anomalileri raporlayacak bir AI sistemini yönlendiren detaylı bir prompt yazın. Sistem hem istatistiksel hem de bağlamsal anomalileri bulabilmeli.',
+        hints: [
+          'Promptunuzda AI\'dan hangi tür anomalileri (örn: çok yüksek/düşük değerler, beklenmedik desenler, aykırı değerler) tespit etmesini beklediğinizi tanımlayın.',
+          'Analiz için kullanılacak veri setinin yapısını (örn: hangi sütunlar önemli, veri tipleri neler) ve potansiyel analiz parametrelerini (örn: hangi istatistiksel yöntemler kullanılabilir) belirtin.',
+          'Anomali raporunun hangi bilgileri içermesini ve hangi formatta (örn: anomali listesi, anomali skoru, olası neden açıklaması) sunulmasını istediğinizi detaylandırın.',
+        ]
+      }
 ];
 
-// Seviyeye göre ilerleyen Prompt Mühendisliği Görevleri (1-30) - Kullanıcının prompt yazacağı görevler
+// Seviyeye göre ilerleyen Prompt Mühendisliği Görevleri (1-30) - Yeniden Düzenlenmiş
 export const levelQuestions: LevelQuestion[] = [
-  // Kolay Seviye Görevleri (1-10) - Temel prompt yazma becerileri, basit çıktılar
+  // --- Kolay Seviye Görevleri (1-10) ---
+  // Temel talimatlar, basit formatlama, hafif yaratıcılık
   {
     level: 1,
-    question: "Basit Bir Yapılacaklar Listesi Prompt'u",
-    task: "AI'ya, kullanıcıların görevleri ekleyebileceği, silebileceği ve tamamlandı olarak işaretleyebileceği temel bir yapılacaklar listesi uygulamasının işlevselliğini tanımlayan bir prompt yazın.",
+    question: "Beş Farklı Meyve Listesi Oluşturma",
+    task: "Bir yapay zekadan (AI), birbirinden farklı beş adet meyve ismini içeren basit bir liste oluşturmasını istemek için nasıl bir prompt yazardın?",
     hints: [
-      "Promptunuzda uygulamanın temel özelliklerini (ekleme, silme, işaretleme) belirtin.",
-      "Kullanıcı etkileşimlerinin nasıl olacağını tarif edin.",
-      "İsteğe bağlı olarak arayüzün nasıl görünebileceğine dair ipuçları ekleyin."
+      "Promptunuzda AI'dan ne tür öğeler (meyve isimleri) listelemesini istediğinizi belirtin.",
+      "Kaç tane öğe (beş tane) istediğinizi net bir şekilde ifade edin.",
+      "Listenin basit bir formatta (örn: virgülle ayrılmış veya alt alta) olmasını beklediğinizi belirtin."
     ]
   },
   {
     level: 2,
-    question: "Hava Durumu Bildirimi Prompt'u",
-    task: "Kullanıcıya günlük hava durumunu anlaşılır, doğal ve kısa bir dille anlatan bir sistem için AI'ya yönergeler veren bir prompt oluşturun.",
+    question: "Cümleyi Resmi Bir Tonda Yeniden Yazma",
+    task: "Bir AI'dan, 'Bence bu fikir harika!' cümlesini daha resmi bir dille (örn: 'Bu fikrin oldukça değerli olduğunu düşünüyorum.') yeniden ifade etmesini istemek için nasıl bir prompt yazardın?",
     hints: [
-      "Promptunuzda hangi hava durumu verilerinin (sıcaklık, durum, rüzgar) kullanılacağını belirtin.",
-      "Bildirimin hangi formatta (örn: 'Bugün hava [durum], sıcaklık [derece]') olacağını tanımlayın.",
-      "Kullanılacak dilin tonunu (örn: samimi, bilgilendirici) belirtin."
+      "Promptunuzda yeniden yazılacak orijinal cümleyi belirtin.",
+      "İstenen yeni tonu (resmi, profesyonel vb.) açıkça ifade edin.",
+      "AI'nın cümlenin ana anlamını koruyarak sadece üslubunu değiştirmesi gerektiğini vurgulayın."
     ]
   },
   {
     level: 3,
-    question: "Basit Hesap Makinesi Prompt'u",
-    task: "Temel matematik işlemlerini (toplama, çıkarma, çarpma, bölme) yapabilen bir hesap makinesi uygulamasının işlevselliğini AI'ya anlatan bir prompt yazın.",
+    question: "Metinden E-posta Adresi Çıkarma",
+    task: "Bir AI'dan, 'Detaylı bilgi için ahmet.yilmaz@ornek.com adresine yazabilirsiniz.' gibi bir metin içerisinden sadece e-posta adresini ('ahmet.yilmaz@ornek.com') çekip çıkarmasını istemek için nasıl bir prompt yazardın?",
     hints: [
-      "Promptunuzda desteklenecek matematik işlemlerini listeleyin.",
-      "AI'dan olası hataları (örn: sıfıra bölme) nasıl ele alması gerektiğini belirtmesini isteyin (isteğe bağlı).",
-      "Sonucun hangi formatta gösterileceğini tanımlayın."
+      "Promptunuzda AI'nın içinden bilgi çıkaracağı metni belirtin.",
+      "Ne tür bir bilgiyi (e-posta adresi) aradığını netleştirin.",
+      "Çıktının sadece bulunan e-posta adresi olmasını beklediğinizi belirtin."
     ]
   },
   {
     level: 4,
-    question: "Sayı Sıralama Prompt'u",
-    task: "Verilen bir sayı listesini (örn: 5, 2, 8, 1) küçükten büyüğe (artan) sıraya göre sıralayan bir algoritma veya fonksiyonun çalışma mantığını AI'ya açıklayan bir prompt yazın.",
+    question: "Yeni Bir Kafe İçin Slogan Önerileri",
+    task: "Bir AI'dan, yeni açılacak bir kahve dükkanı için akılda kalıcı üç farklı slogan (tagline) önermesini istemek için nasıl bir prompt yazardın?",
     hints: [
-      "Promptunuzda AI'dan bir sayı listesini giriş olarak alacağını belirtin.",
-      "Sıralama yöntemini (baloncuk sıralama, eklemeli sıralama vb. gibi spesifik bir algoritma veya genel bir açıklama) tarif edin.",
-      "Çıktının sıralanmış liste formatında olacağını belirtin."
+      "Promptunuzda ne için slogan istediğinizi (yeni kahve dükkanı) belirtin.",
+      "Sloganların sahip olması gereken özellikleri (akılda kalıcı, kısa vb.) tanımlayın.",
+      "Kaç tane slogan önerisi (üç tane) istediğinizi net bir şekilde ifade edin."
     ]
   },
   {
     level: 5,
-    question: "Metin Ters Çevirme Prompt'u",
-    task: "Kullanıcının girdiği herhangi bir metni (örn: 'merhaba dünya'), karakterleri tersten olacak şekilde (örn: 'aynüd abahrem') döndüren bir aracın işlevselliğini AI'ya anlatan bir prompt oluşturun.",
+    question: "Basit Bir Kavramı Açıklama (CPU)",
+    task: "Bir AI'dan, 'CPU' (Merkezi İşlem Birimi) kavramının ne işe yaradığını, teknolojiyle arası iyi olmayan bir yetişkine yönelik, tek ve basit bir cümleyle açıklamasını istemek için nasıl bir prompt yazardın?",
     hints: [
-      "Promptunuzda AI'dan bir metin dizesini giriş olarak alacağını belirtin.",
-      "Metni nasıl ters çevirmesi gerektiğini (karakter karakter sondan başa doğru okuma) açıklayın.",
-      "Çıktının ters çevrilmiş metin formatında olacağını belirtin."
+      "Promptunuzda açıklanacak kavramı (CPU) belirtin.",
+      "Hedef kitleyi (teknolojiyle arası iyi olmayan yetişkin) ve açıklamanın formatını (tek, basit cümle) tanımlayın.",
+      "AI'dan karmaşık teknik terimlerden kaçınmasını ve bir benzetme kullanabileceğini (isteğe bağlı) belirtin."
     ]
   },
   {
     level: 6,
-    question: "Tek/Çift Sayı Kontrolü Prompt'u",
-    task: "Verilen bir tam sayının tek mi yoksa çift mi olduğunu belirleyen basit bir kontrol mekanizmasını AI'ya anlatan bir prompt yazın.",
+    question: "Kısa Metnin Duygusunu Belirleme",
+    task: "Bir AI'dan, 'Bugün hava ne çok sıcak ne de çok soğuk.' cümlesinin genel duygusunu (örn: nötr, tarafsız) tek kelimeyle sınıflandırmasını istemek için nasıl bir prompt yazardın?",
     hints: [
-      "Promptunuzda AI'dan bir tam sayıyı giriş olarak alacağını belirtin.",
-      "Kontrol mantığını (sayının 2'ye bölümünden kalanın 0 olup olmaması) açıklayın.",
-      "Çıktının 'Tek' veya 'Çift' gibi bir metin formatında olacağını belirtin."
+      "Promptunuzda analiz edilecek cümleyi belirtin.",
+      "AI'dan yapmasını istediğiniz analizi (duygu sınıflandırması) ve çıktının formatını (tek kelime) netleştirin.",
+      "AI'nın temel duygu kategorilerini (olumlu/negatif/nötr) bildiğini varsayarak basit bir sonuç isteyin."
     ]
   },
   {
     level: 7,
-    question: "Rastgele Sayı Üretici Prompt'u",
-    task: "Belirlenen minimum ve maksimum değerler (örn: 1 ile 100 arası) dahil olmak üzere, bu aralıkta rastgele bir tam sayı üreten bir fonksiyonun tanımını AI'ya yapan bir prompt oluşturun.",
+    question: "Basit Bir İşlem İçin Adım Listesi",
+    task: "Bir AI'dan, online bir alışveriş sitesinden bir ürünü sepete eklemenin temel adımlarını (örn: ürünü bul, sepete ekle butonuna tıkla) madde işaretli kısa bir liste halinde yazmasını istemek için nasıl bir prompt yazardın?",
     hints: [
-      "Promptunuzda AI'dan bir minimum ve bir maksimum değer alacağını belirtin.",
-      "Üretilecek sayının tam sayı olacağını ve aralığın sınırlarını içereceğini vurgulayın.",
-      "Çıktının tek bir rastgele sayı formatında olacağını belirtin."
+      "Promptunuzda hangi işlem için (ürünü sepete ekleme) adımlar istediğinizi belirtin.",
+      "Adımların temel ve anlaşılır olmasını istediğinizi vurgulayın.",
+      "Çıktının formatını (madde işaretli liste) tanımlayın."
     ]
   },
   {
     level: 8,
-    question: "Listedeki En Büyük Sayıyı Bulma Prompt'u",
-    task: "Sayılar içeren bir listeden (örn: [10, 4, 25, 7]) en büyük değeri bulan bir işlemin adımlarını AI'ya anlatan bir prompt yazın.",
+    question: "Kısa Ürün Tanıtımı Yazma",
+    task: "Bir AI'dan, 'kendi kendini temizleyen akıllı kupa' gibi hayali bir ürün için, ürünün ana faydasını vurgulayan iki cümlelik kısa bir tanıtım metni yazmasını istemek için nasıl bir prompt yazardın?",
     hints: [
-      "Promptunuzda AI'dan bir sayı listesini giriş olarak alacağını belirtin.",
-      "En büyük sayıyı bulma mantığını (listeyi dolaşarak en büyük değeri takip etme) açıklayın.",
-      "Çıktının bulunan en büyük sayı formatında olacağını belirtin."
+      "Promptunuzda tanıtılacak ürünü (akıllı kupa) ve temel özelliğini (kendi kendini temizleme) belirtin.",
+      "Tanıtımın uzunluk kısıtlamasını (iki cümle) ve amacını (ana faydayı vurgulama) netleştirin.",
+      "AI'dan ikna edici ve ilgi çekici bir dil kullanmasını isteyin."
     ]
   },
   {
     level: 9,
-    question: "Sıcaklık Dönüştürücü Prompt'u (Santigrat -> Fahrenhayt)",
-    task: "Santigrat derece cinsinden verilen bir sıcaklık değerini Fahrenhayt dereceye çeviren bir hesaplama fonksiyonunu AI'ya tarif eden bir prompt oluşturun.",
+    question: "Basit Rol Yapma: Seyahat Danışmanı",
+    task: "Bir AI'dan, bir seyahat danışmanı rolünü üstlenerek, İtalya'nın Roma şehrini ziyaret eden bir turiste mutlaka görmesi gereken tarihi bir yer önermesini istemek için nasıl bir prompt yazardın?",
     hints: [
-      "Promptunuzda AI'dan Santigrat cinsinden bir sayı alacağını belirtin.",
-      "Çevrim için kullanılacak formülü ekleyin (F = C * 9/5 + 32) veya AI'nın bu dönüşümü yapmasını isteyin.",
-      "Çıktının Fahrenhayt cinsinden sayı formatında olacağını belirtin."
+      "Promptunuzda AI'dan üstlenmesini istediğiniz rolü (seyahat danışmanı) belirtin.",
+      "Danışmanlık yapılacak konuyu (Roma ziyareti) ve istenen öneri türünü (tarihi bir yer) tanımlayın.",
+      "AI'dan sadece bir yer önermesini ve nedenini kısaca belirtmesini (isteğe bağlı) isteyin."
     ]
   },
   {
     level: 10,
-    question: "Kişiselleştirilmiş Karşılama Prompt'u",
-    task: "Kullanıcı adı bilgisini alarak (örn: 'Ahmet'), bu adı içeren kişiselleştirilmiş, basit bir karşılama mesajı (örn: 'Merhaba Ahmet, hoş geldiniz!') oluşturan bir metin üretim görevini AI'ya anlatan bir prompt yazın.",
+    question: "Basit Kod Fonksiyon Tanımı (Python)",
+    task: "Bir AI'dan, Python dilinde iki sayıyı toplayıp sonucu döndürecek basit bir fonksiyonun sadece tanım satırını (`def fonksiyon_adi(parametreler):`) ve ne iş yaptığını açıklayan kısa bir docstring'ini (`\"\"\"Bu fonksiyon...\"\"\"`) oluşturmasını istemek için nasıl bir prompt yazardın?",
     hints: [
-      "Promptunuzda AI'dan bir kullanıcı adı alacağını belirtin.",
-      "Mesajın temel yapısını (örn: 'Merhaba [Kullanıcı Adı], [ek mesaj]') tanımlayın.",
-      "Çıktının tek bir metin dizesi formatında olacağını belirtin."
+      "Promptunuzda hangi programlama dilini (Python) ve fonksiyonun amacını (iki sayıyı toplama) belirtin.",
+      "AI'dan sadece fonksiyonun imzasını (tanım satırı) ve kısa bir açıklama metnini (docstring) istediğinizi netleştirin.",
+      "Fonksiyonun içine kod yazmasını değil, sadece tanım ve açıklama kısmını oluşturmasını isteyin."
     ]
   },
 
-  // Orta Seviye Görevleri (11-20) - Daha karmaşık mantık, temel veri işleme, otomasyon fikirleri
+  // --- Orta Seviye Görevleri (11-20) ---
+  // Daha detaylı talimatlar, yapılandırılmış çıktılar, karşılaştırma, fikir üretme
   {
     level: 11,
-    question: "Sosyal Medya Etkileşim Analizi Prompt'u",
-    task: "Belirli bir sosyal medya gönderisi veya konu hakkındaki temel etkileşim metriklerini (beğeni sayısı, yorum sayısı, paylaşım sayısı) analiz edip, bu verileri anlamlı bir şekilde özetleyen bir AI aracını tanımlayan bir prompt oluşturun.",
+    question: "Verilen Anahtar Kelimelerle Kısa Hikaye Yazma",
+    task: "Bir AI'dan 'robot', 'orman', 'yıldız' anahtar kelimelerini kullanarak, yaklaşık 3-4 cümlelik kısa bir bilim kurgu hikayesi oluşturmasını istemek için nasıl bir prompt yazardın?",
     hints: [
-      "Promptunuzda AI'dan analiz edilecek sosyal medya gönderisi/konusu ve ilgili etkileşim verilerini alacağını belirtin.",
-      "Hangi metriklerin (beğeni, yorum, paylaşım) dikkate alınacağını netleştirin.",
-      "Analiz sonucunun hangi formatta (örn: toplamlar, oranlar, kısa bir yorum) sunulmasını istediğinizi tanımlayın."
+      "Promptunuzda kullanılacak anahtar kelimeleri ('robot', 'orman', 'yıldız') belirtin.",
+      "Hikayenin türünü (bilim kurgu) ve yaklaşık uzunluğunu (3-4 cümle) tanımlayın.",
+      "AI'dan kelimeleri anlamlı bir şekilde hikayeye entegre etmesini isteyin."
     ]
   },
   {
     level: 12,
-    question: "Otomatik E-posta Taslağı Yanıtlayıcı Prompt'u",
-    task: "Gelen e-postaların konusunu veya içeriğini analiz ederek, buna uygun (örn: 'teşekkür', 'bilgi talebi', 'destek ihtiyacı') taslak bir e-posta yanıtı oluşturan bir AI sistemini yönlendiren bir prompt yazın.",
+    question: "Paragrafı İki Ana Fikre Özetleme",
+    task: "Bir AI'dan, size verilen yaklaşık 100 kelimelik bir paragrafı okuyup, içindeki iki ana fikri madde işaretleri kullanarak özetlemesini istemek için nasıl bir prompt yazardın?",
     hints: [
-      "Promptunuzda AI'dan bir e-postanın konusunu ve içeriğini alacağını belirtin.",
-      "AI'nın tespit etmesi gereken farklı e-posta kategorilerini veya amaçlarını (örn: sipariş, destek, genel soru) listeleyin.",
-      "Her kategori için taslak yanıtın tonunu (örn: resmi, samimi) ve içermesi gereken temel bilgileri (örn: 'talebiniz alındı', 'size dönüş yapacağız') tanımlayın."
+      "Promptunuzda özetlenecek paragrafı (veya kaynağını) belirtin.",
+      "Özetin kaç ana fikirden (iki tane) oluşması gerektiğini ve formatını (madde işaretli) tanımlayın.",
+      "AI'dan paragrafın en önemli noktalarını yakalamasını isteyin."
     ]
   },
   {
     level: 13,
-    question: "Web Formu Giriş Doğrulama Prompt'u",
-    task: "Bir web formundaki farklı giriş alanları (örn: e-posta adresi, telefon numarası, şifre, doğum tarihi) için temel doğrulama (validation) kurallarını açıklayan bir AI yönergesi promptu oluşturun.",
+    question: "Profesyonel E-posta Taslağı (Proje Güncellemesi)",
+    task: "Bir AI'dan, bir iş arkadaşınızdan sorumlu olduğu projenin son durumu hakkında bilgi isteyen, kısa ve profesyonel bir dille yazılmış bir e-posta taslağı oluşturmasını istemek için nasıl bir prompt yazardın?",
     hints: [
-      "Promptunuzda AI'dan doğrulama yapılacak alan tiplerini (e-posta, telefon vb.) alacağını belirtin.",
-      "Her alan tipi için uygulanacak geçerli format kurallarını (örn: e-posta için '@' ve '.' içermeli, şifre en az 8 karakter olmalı) açıklayın.",
-      "Doğrulama başarısız olduğunda kullanıcıya gösterilecek hata mesajı örneklerini veya formatını belirtin."
+      "Promptunuzda e-postanın amacını (proje güncellemesi isteme) ve tonunu (profesyonel, nazik) belirtin.",
+      "E-postanın içermesi gereken temel unsurları (selamlama, isteğin belirtilmesi, teşekkür, kapanış) tanımlayın.",
+      "AI'dan taslağı genel ve farklı durumlara uyarlanabilir şekilde yazmasını isteyin."
     ]
   },
   {
     level: 14,
-    question: "Zar Atma Simülasyonu Prompt'u",
-    task: "Belirli sayıda altı yüzlü zarın atılmasını simüle eden ve her bir zarın sonucunu (veya toplamını) döndüren bir AI görevini tanımlayan bir prompt yazın.",
+    question: "İki Kavramı Karşılaştırma (Laptop vs Tablet)",
+    task: "Bir AI'dan, 'laptop' (dizüstü bilgisayar) ve 'tablet' cihazlarını, özellikle 'taşınabilirlik' ve 'işlem gücü' açısından karşılaştıran kısa bir paragraf yazmasını istemek için nasıl bir prompt yazardın?",
     hints: [
-      "Promptunuzda AI'dan kaç adet zar atılacağını alacağını belirtin.",
-      "Zarların altı yüzlü olduğunu varsaymasını isteyin (veya zar sayısını belirtin).",
-      "Çıktının her zarın ayrı ayrı sonucu mu, yoksa zarların toplamı mı olacağını netleştirin."
+      "Promptunuzda karşılaştırılacak iki kavramı (laptop, tablet) belirtin.",
+      "Karşılaştırmanın odaklanması gereken kriterleri (taşınabilirlik, işlem gücü) netleştirin.",
+      "AI'dan her iki cihazın bu kriterlere göre avantaj ve dezavantajlarını dengeli bir şekilde sunmasını isteyin."
     ]
   },
   {
     level: 15,
-    question: "Toplantı Gündemi Taslağı Prompt'u",
-    task: "Verilen bir konu listesini (örn: 'Proje A Güncellemesi', 'Yeni Fikirler', 'Bütçe Durumu') kullanarak, standart bir formatta madde madde bir toplantı gündemi taslağı oluşturan bir AI için talimatlar veren bir prompt yazın.",
+    question: "Basit JSON Verisi Oluşturma (Kullanıcı Bilgisi)",
+    task: "Bir AI'dan, bir kullanıcıyı temsil eden; 'ad', 'soyad' ve 'sehir' anahtarlarına sahip, değerleri örnek verilerle doldurulmuş (örn: 'Ayşe', 'Kaya', 'İstanbul') basit bir JSON nesnesi oluşturmasını istemek için nasıl bir prompt yazardın?",
     hints: [
-      "Promptunuzda AI'dan bir konu listesini giriş olarak alacağını belirtin.",
-      "Gündemin hangi standart bölümleri içermesi gerektiğini tanımlayın (örn: Giriş, Konular, Kararlar, Kapanış).",
-      "İsteğe bağlı olarak her konu için tahmini bir süre eklemesini isteyin."
+      "Promptunuzda oluşturulacak veri yapısının formatını (JSON nesnesi) belirtin.",
+      "JSON nesnesinde bulunması gereken anahtarları ('ad', 'soyad', 'sehir') listeleyin.",
+      "AI'dan bu anahtarlara uygun örnek değerler atamasını isteyin."
     ]
   },
   {
     level: 16,
-    question: "Quiz Puanlama Mantığı Prompt'u",
-    task: "Çoktan seçmeli bir quizde verilen cevaplara göre bir kullanıcının puanını hesaplama mantığını (örn: doğru cevap +10, yanlış cevap -5, boş 0) AI'ya açıklayan bir prompt oluşturun.",
+    question: "Belirli Bir Konuda Fikir Üretme (Blog Yazısı)",
+    task: "Bir AI'dan, 'şehirde sürdürülebilir yaşam' konulu bir blog için yazılabilecek beş farklı ve ilgi çekici yazı başlığı fikri üretmesini istemek için nasıl bir prompt yazardın?",
     hints: [
-      "Promptunuzda AI'dan kullanıcının cevap listesini ve doğru cevap anahtarını alacağını belirtin.",
-      "Puanlama kuralını her bir cevap türü (doğru, yanlış, boş) için açıkça tanımlayın.",
-      "Sonucun toplam puan formatında olacağını belirtin."
+      "Promptunuzda fikir üretilecek ana konuyu ('şehirde sürdürülebilir yaşam') belirtin.",
+      "Ne tür fikirler (blog yazısı başlıkları) ve kaç tane (beş tane) istediğinizi netleştirin.",
+      "AI'dan hem bilgilendirici hem de okuyucunun ilgisini çekecek başlıklar önermesini teşvik edin."
     ]
   },
   {
     level: 17,
-    question: "CSV Verisi Ayrıştırma Prompt'u",
-    task: "Virgülle ayrılmış değerler (CSV) formatında verilen tek bir metin satırındaki (örn: 'Elma,Kırmızı,Taze,3.50') alanları ayrı ayrı listeleyen (parse eden) bir AI görevini tanımlayan bir prompt yazın.",
+    question: "Teknik Bir Terimi Basitleştirme (Phishing)",
+    task: "Bir AI'dan, 'phishing' (oltalama) saldırısının ne olduğunu, interneti yeni kullanmaya başlayan birine anlatır gibi, basit terimlerle ve kısa bir uyarı ekleyerek açıklamasını istemek için nasıl bir prompt yazardın?",
     hints: [
-      "Promptunuzda AI'dan virgülle ayrılmış bir metin satırı alacağını belirtin.",
-      "Alanların hangi karakterle ayrıldığını (virgül) net olarak belirtin.",
-      "Çıktının ayrıştırılmış alanların bir listesi veya dizi şeklinde olacağını tanımlayın."
+      "Promptunuzda açıklanacak teknik terimi ('phishing') ve hedef kitleyi (internette yeni kullanıcı) belirtin.",
+      "Açıklamanın basit, anlaşılır olmasını ve bir örnek/benzetme içermesini (isteğe bağlı) isteyin.",
+      "AI'dan açıklamanın sonuna kısa ve net bir korunma uyarısı eklemesini talep edin."
     ]
   },
   {
     level: 18,
-    question: "Basit Film Öneri Prompt'u",
-    task: "Kullanıcının girdiği bir film türüne (örn: Bilim Kurgu, Romantik Komedi) göre basit bir film önerisinde bulunan bir AI görevini tanımlayan bir prompt oluşturun.",
+    question: "Bir Konunun Artılarını ve Eksilerini Listeleme",
+    task: "Bir AI'dan, 'evden çalışmanın' hem avantajlarından (artılarından) iki tane hem de dezavantajlarından (eksilerinden) iki tane belirleyip bunları ayrı listeler halinde sunmasını istemek için nasıl bir prompt yazardın?",
     hints: [
-      "Promptunuzda AI'dan hangi film türünde öneri istendiğini alacağını belirtin.",
-      "AI'dan bu türe uygun bir veya birkaç film adı önermesini isteyin.",
-      "Önerinin formatını (sadece film adı, belki kısa bir cümle açıklama) tanımlayın."
+      "Promptunuzda artı ve eksileri listelenecek konuyu ('evden çalışma') belirtin.",
+      "Hem artılardan hem de eksilerden kaçar tane (ikişer tane) istediğinizi netleştirin.",
+      "Çıktının 'Artıları:' ve 'Eksileri:' gibi başlıklarla net bir şekilde ayrılmasını istediğinizi tanımlayın."
     ]
   },
   {
     level: 19,
-    question: "Veritabanı Tablo Şeması Taslağı Prompt'u",
-    task: "Basit bir varlık (örn: 'Müşteri') için temel veritabanı tablo şemasını (sütun adları ve veri tipleri) tanımlayan bir AI yönergesi promptu oluşturun.",
+    question: "Sosyal Medya İçin Duyuru Metni Yazma",
+    task: "Bir AI'dan, hayali bir mobil uygulama için geliştirilen 'karanlık mod' özelliğini duyuran, kullanıcıları denemeye teşvik eden kısa (1-2 cümlelik) bir sosyal medya gönderisi metni yazmasını istemek için nasıl bir prompt yazardın?",
     hints: [
-      "Promptunuzda AI'dan hangi varlık için şema oluşturulacağını belirtin.",
-      "Tabloda olması gereken temel sütun adlarını (örn: 'musteri_id', 'ad', 'eposta') listelemesini isteyin.",
-      "Her sütun için uygun olabilecek veri tipini (örn: INT, VARCHAR, TEXT, DATE) belirtmesini isteyin."
+      "Promptunuzda duyurulacak özelliği ('karanlık mod') ve platformu (sosyal medya) belirtin.",
+      "Gönderinin amacını (duyuru yapma, kullanıcıyı teşvik etme) ve tonunu (heyecanlı, bilgilendirici vb.) tanımlayın.",
+      "Metnin kısa ve dikkat çekici olmasını, bir eylem çağrısı (call to action) içermesini (isteğe bağlı) isteyin."
     ]
   },
   {
     level: 20,
-    question: "Recursion (Özyineleme) Kavramı Açıklaması Prompt'u",
-    task: "Bilgisayar bilimlerindeki özyineleme (recursion) kavramını, faktöriyel hesaplama gibi basit ve anlaşılır bir örnek kullanarak açıklayan bir AI metni üretecek bir prompt yazın.",
+    question: "Basit Bir Senaryoyu Simüle Etme (Müşteri Hizmetleri)",
+    task: "Bir AI'dan, bir müşterinin şifresini unuttuğu için destek hattına yazdığı ve temsilcinin ona ilk adımları sorduğu çok kısa (2-3 konuşma sırası) bir müşteri hizmetleri diyaloğunu canlandırmasını (simüle etmesini) istemek için nasıl bir prompt yazardın?",
     hints: [
-      "Promptunuzda AI'dan özyineleme kavramını tanımlamasını isteyin.",
-      "Açıklama için kullanılacak somut bir örneği (faktöriyel hesaplama) belirtin.",
-      "AI'dan örnek üzerinden özyinelemenin temel adımlarını (recursive case, base case) anlatmasını isteyin."
+      "Promptunuzda canlandırılacak senaryoyu (şifre unutma destek diyaloğu) ve rolleri (müşteri, temsilci) belirtin.",
+      "Diyaloğun ne kadar sürmesi gerektiğini (çok kısa, 2-3 konuşma sırası) tanımlayın.",
+      "AI'dan her konuşmacının sözünü ayrı ayrı belirtmesini (örn: Müşteri: ..., Temsilci: ...) isteyin."
     ]
   },
 
-  // Zor Seviye Görevleri (21-30) - İleri kavramlar, detaylı sistem tasarımları, çok adımlı süreçler
+  // --- Zor Seviye Görevleri (21-30) ---
+  // Kompleks talimatlar, kodlama, ileri kavramlar, strateji, detaylı yaratıcılık
   {
     level: 21,
-    question: "Çok Görevli NLP Sistemi Prompt'u",
-    task: "Tek bir prompt ile, bir metin için hem duygu analizi yapacak, hem metni kategorize edecek (spor, politika vb.), hem de kısa bir özetini çıkaracak bir AI sistemini yönlendiren detaylı bir prompt yazın. Her bir çıktı formatını belirtin.",
+    question: "Hata Kontrollü Kod Yazdırma (Python Ortalama)",
+    task: "Bir AI'dan, Python dilinde, kendisine verilen sayı listesinin aritmetik ortalamasını hesaplayan bir fonksiyon yazmasını isteyin. Fonksiyonun, boş liste verilmesi durumunda hata vermemesini (örn: 0 döndürmesini veya özel bir mesaj vermesini) sağlayacak şekilde nasıl bir prompt yazardın?",
     hints: [
-      "Promptunuzda AI'dan hangi metin üzerinde çalışacağını belirtin.",
-      "AI'dan yapmasını istediğiniz üç görevi (duygu analizi, sınıflandırma, özetleme) açıkça listeleyin.",
-      "Her bir görev için beklenen çıktı formatını ayrı ayrı tanımlayın (örn: Duygu: Pozitif/Negatif/Nötr; Kategori: [Kategori Adı]; Özet: [Kısa Paragraf])."
+      "Promptunuzda istenen fonksiyonun amacını (liste ortalaması hesaplama) ve programlama dilini (Python) belirtin.",
+      "Fonksiyonun girdi olarak ne alacağını (sayı listesi) ve ne döndüreceğini (ortalama) tanımlayın.",
+      "Özellikle ele alınması gereken hata durumunu (boş liste) ve bu durumda beklenen davranışı (hata vermemek, belirli bir değer döndürmek) netleştirin."
     ]
   },
   {
     level: 22,
-    question: "Otomatik Kod Düzeltici Prompt'u",
-    task: "Belirli bir programlama dilinde (örn: Python) verilen bir kod parçasındaki yaygın sözdizimi (syntax) veya basit mantık hatalarını tespit edip, bu hataları düzelten veya düzeltme önerileri sunan bir AI sistemini yönlendiren bir prompt oluşturun.",
+    question: "İleri ML Kavramlarını Benzetmeyle Açıklama",
+    task: "Bir AI'dan, makine öğrenmesindeki 'Gözetimli Öğrenme' (Supervised Learning) ve 'Gözetimsiz Öğrenme' (Unsupervised Learning) arasındaki temel farkı, her biri için akılda kalıcı bir benzetme (analogy) kullanarak açıklamasını istemek için nasıl bir prompt yazardın?",
     hints: [
-      "Promptunuzda AI'dan analiz edilecek kod parçasını ve hangi programlama dilinde olduğunu alacağını belirtin.",
-      "AI'dan tespit etmesini istediğiniz hata türlerine dair örnekler verin (örn: eksik parantez, yanlış girinti, tanımlanmamış değişken).",
-      "AI'dan hata bulunan satırı, hatanın açıklamasını ve önerilen düzeltmeyi belirtecek bir çıktı formatı isteyin."
+      "Promptunuzda açıklanması istenen iki kavramı (Gözetimli ve Gözetimsiz Öğrenme) belirtin.",
+      "AI'dan aralarındaki temel farka (etiketli veri vs etiketsiz veri) odaklanmasını isteyin.",
+      "Her bir kavram için ayrı ve açıklayıcı bir benzetme (analogy) kullanmasını özellikle talep edin."
     ]
   },
-    {
+  {
     level: 23,
-    question: "ML Model Sorunları Açıklama Prompt'u (Overfitting/Underfitting)",
-    task: "Makine öğrenmesinde sık karşılaşılan Overfitting (aşırı uyum) ve Underfitting (eksik uyum) kavramlarını, neden ortaya çıktıklarını ve bu sorunlarla başa çıkmak için kullanılabilecek yöntemleri detaylıca açıklayan bir AI metni üretecek bir prompt yazın.",
+    question: "Detaylı Pazarlama Planı Taslağı Oluşturma",
+    task: "Bir AI'dan, piyasaya yeni çıkacak çevre dostu bir temizlik ürünü için kapsamlı bir pazarlama planının ana başlıklarını (örn: Hedef Kitle Analizi, Rakip Analizi, Fiyatlandırma Stratejisi, Tanıtım Kanalları, Bütçe Tahmini, Başarı Metrikleri) içeren detaylı bir taslak oluşturmasını istemek için nasıl bir prompt yazardın?",
     hints: [
-      "Promptunuzda AI'dan Overfitting ve Underfitting kavramlarını net bir dille tanımlamasını isteyin.",
-      "Her bir durumun (Overfitting/Underfitting) temel nedenlerini (örn: model karmaşıklığı, veri miktarı) açıklamasını beklediğinizi belirtin.",
-      "Bu sorunları çözmek için kullanılabilecek yaygın yöntemleri (örn: regularization, daha fazla veri toplama, model seçimi) açıklamasını isteyin."
+      "Promptunuzda pazarlama planının konusu olan ürünü (çevre dostu temizlik ürünü) belirtin.",
+      "Planın kapsamlı olması gerektiğini ve içermesi beklenen ana bölümleri (Hedef Kitle, Rakipler, Fiyatlandırma vb.) listeleyin.",
+      "AI'dan her başlık altına kısaca nelerin dahil edilebileceğine dair alt maddeler veya sorular eklemesini (isteğe bağlı) isteyin."
     ]
   },
   {
     level: 24,
-    question: "Graf Geçiş Algoritması Açıklama Prompt'u (BFS veya DFS)",
-    task: "Bilgisayar bilimlerindeki graf geçiş algoritmalarından Genişlik-Öncelikli Arama (BFS) veya Derinlik-Öncelikli Arama (DFS) algoritmalarından birinin çalışma prensibini, temel adımlarını ve hangi veri yapısını (kuyruk veya stack) kullandığını detaylıca anlatan bir AI metni üretecek bir prompt yazın.",
+    question: "Müşteri Geri Bildirimini Çok Yönlü Analiz Etme",
+    task: "Bir AI'dan, kısa bir müşteri yorumunu ('Uygulamanız çok yavaş çalışıyor ve arayüzü karışık.') analiz ederek; 1) Genel duygunun ne olduğunu (örn: olumsuz), 2) Bahsedilen ana sorunları (yavaşlık, karışık arayüz), 3) Bu yoruma verilebilecek yanıt türünü (örn: teknik destek, özür) belirlemesini istemek için nasıl bir prompt yazardın?",
     hints: [
-      "Promptunuzda AI'dan BFS veya DFS algoritmalarından birini seçmesini (veya hangisini istediğinizi belirtin) ve açıklamasını isteyin.",
-      "Algoritmanın bir graf üzerinde nasıl ilerlediğini (komşuları önce mi, derinlemesine mi) adım adım anlatmasını talep edin.",
-      "Algoritmanın kullandığı temel veri yapısını (BFS için kuyruk, DFS için stack) ve nedenini açıklamasını isteyin."
+      "Promptunuzda analiz edilecek müşteri yorumunu belirtin.",
+      "AI'dan yapmasını istediğiniz analiz adımlarını (duygu tespiti, sorun çıkarımı, yanıt kategorizasyonu) net bir şekilde numaralandırarak veya listeleyerek belirtin.",
+      "Her adım için beklenen çıktının formatını (örn: Duygu: Olumsuz, Sorunlar: [liste], Yanıt Kategorisi: Teknik Destek) tanımlayın."
     ]
   },
   {
     level: 25,
-    question: "Unit Test Senaryoları Üretme Prompt'u",
-    task: "Belirli bir fonksiyon (örn: bir dizideki pozitif sayıların toplamını bulan) için farklı durumları (boş dizi, tümü pozitif, tümü negatif, karışık) kapsayan Unit Test senaryoları listesi oluşturan bir AI görevini tanımlayan bir prompt oluşturun. Her senaryo için girdiyi ve beklenen çıktıyı belirtmesini isteyin.",
+    question: "Detaylı Senaryo Sahnesi Yazdırma",
+    task: "Bir AI'dan, bir senaryo için; karakterlerden birinin çok sakin diğerinin ise çok telaşlı olduğu, kayıp bir hazine haritası üzerine tartıştıkları kısa bir sahne (diyalog ağırlıklı) yazmasını istemek için nasıl bir prompt yazardın? Sahnenin bir kütüphanede geçtiğini belirtin.",
     hints: [
-      "Promptunuzda AI'dan test edilecek fonksiyonu (ve işlevini) tarif edin.",
-      "AI'dan farklı test durumu türlerini (örn: geçerli girdiler, köşe durumlar, geçersiz girdiler - isteğe bağlı) düşünmesini isteyin.",
-      "Her test senaryosu için hangi girdiyi kullanacağını ve bu girdi için fonksiyonun doğru çıktısının ne olması gerektiğini belirtmesini talep edin."
+      "Promptunuzda sahnenin geçtiği mekanı (kütüphane) ve ana konusunu (kayıp harita üzerine tartışma) belirtin.",
+      "Karakterlerin temel kişilik özelliklerini (biri sakin, diğeri telaşlı) tanımlayın.",
+      "Sahnenin formatını (senaryo formatında, diyalog ağırlıklı) ve AI'dan karakterlerin kişiliklerine uygun diyaloglar yazmasını isteyin."
     ]
   },
   {
     level: 26,
-    question: "RESTful API Prensip Açıklaması Prompt'u",
-    task: "Web servis tasarımında yaygın olarak kullanılan RESTful API mimari tarzını, temel prensiplerini (örneğin, Kaynak Odaklılık, Durumsuzluk) ve neden popüler olduğunu açıklayan bilgilendirici bir AI metni üretecek bir prompt yazın.",
+    question: "Teknik Bir Yöntemi Uygulamalı Açıklama (A/B Testi)",
+    task: "Bir AI'dan, 'A/B Testi' yönteminin ne olduğunu kısaca açıkladıktan sonra, bir e-ticaret sitesinin ürün sayfasındaki 'Satın Al' butonunun rengini test etmek için bu yöntemin nasıl uygulanabileceğini adımlar halinde anlatmasını istemek için nasıl bir prompt yazardın?",
     hints: [
-      "Promptunuzda AI'dan REST'in ne anlama geldiğini (Representational State Transfer) ve temel amacını açıklamasını isteyin.",
-      "RESTful tasarımın temel prensiplerini (kaynaklar, durumsuzluk, istemci-sunucu vb.) madde madde açıklamasını talep edin.",
-      "AI'dan RESTful API'lerin web servisleri için neden iyi bir yaklaşım olduğunu anlatan bir paragraf eklemesini isteyin."
+      "Promptunuzda açıklanacak yöntemi (A/B Testi) belirtin.",
+      "AI'dan önce yöntemin genel bir tanımını yapmasını, sonra da belirli bir uygulama örneği (buton rengi testi) üzerinden adımlarını anlatmasını isteyin.",
+      "Uygulama adımlarının net ve anlaşılır olmasını (örn: hipotez kurma, varyasyonları oluşturma, trafik yönlendirme, sonuçları analiz etme) talep edin."
     ]
   },
   {
     level: 27,
-    question: "Web Uygulaması Hata Yönetimi Stratejisi Prompt'u",
-    task: "Basit bir web uygulamasında ortaya çıkabilecek farklı hata türleri (örn: veritabanı hatası, kullanıcı girişi hatası, yetkilendirme hatası) için temel bir hata yönetimi (error handling) stratejisi taslağı (nasıl yakalanır, loglanır, kullanıcıya ne gösterilir) oluşturan bir AI yönergesi promptu yazın.",
+    question: "Belirli Bir Rol İçin Mülakat Soruları Hazırlama",
+    task: "Bir AI'dan, bir şirketin 'Yapay Zeka Etik Uzmanı' pozisyonu için işe alım sürecinde adaya sorulabilecek, hem teknik bilgi hem de eleştirel düşünme becerisini ölçen 5 adet mülakat sorusu hazırlamasını istemek için nasıl bir prompt yazardın?",
     hints: [
-      "Promptunuzda AI'dan web uygulamasında karşılaşılabilecek farklı hata tiplerini sınıflandırmasını isteyin.",
-      "Her hata tipi için temel eylem adımlarını (örn: hata yakalama, detayları loglama, kullanıcıya genel/güvenli bir mesaj gösterme) açıklamasını talep edin.",
-      "Güvenlik açısından hassas bilgilerin (örn: veritabanı şifreleri) hata mesajlarında gösterilmemesi gerektiğine dair bir not eklemesini isteyin (isteğe bağlı)."
+      "Promptunuzda mülakat yapılacak pozisyonu ('Yapay Zeka Etik Uzmanı') net bir şekilde belirtin.",
+      "Soruların amacını (teknik bilgi ve eleştirel düşünmeyi ölçme) tanımlayın.",
+      "Kaç tane soru (5 adet) istediğinizi ve soruların pozisyona uygun derinlikte ve düşündürücü olmasını beklediğinizi belirtin."
     ]
   },
   {
     level: 28,
-    question: "Belirli Bir Yazarın Stilinde Metin Üretme Prompt'u",
-    task: "Belirli bir yazarın (örn: Orhan Pamuk, Jane Austen) veya edebi bir türün (örn: Gotik hikaye) belirgin üslubunu taklit ederek kısa, yaratıcı bir metin (bir paragraf veya sahne) üretecek bir AI görevini tanımlayan bir prompt oluşturun.",
+    question: "Karşıt Görüş Simülasyonu (Tartışma)",
+    task: "Bir AI'dan, bir tartışma ortamında 'genetiği değiştirilmiş organizmaların (GDO) yasaklanması gerektiği' fikrine karşı çıkan bir rolü üstlenmesini ve bu karşıt görüşü destekleyen üç farklı argüman sunmasını istemek için nasıl bir prompt yazardın?",
     hints: [
-      "Promptunuzda AI'dan taklit edilecek yazarın adını veya edebi türü açıkça belirtin.",
-      "Üretilecek metnin konusunu veya içermesi gereken unsurları (bir karakter, bir olay, bir mekan) sağlayın.",
-      "AI'dan o yazarın/türün karakteristik üslup özelliklerine (cümle yapısı, kelime seçimi, atmosfer, anlatım biçimi) dikkat etmesini isteyin."
+      "Promptunuzda AI'dan üstlenmesini istediğiniz rolü (GDO'ların yasaklanmasına karşı çıkan tartışmacı) belirtin.",
+      "Savunulacak ana fikri (GDO karşıtlığına karşı çıkma) netleştirin.",
+      "AI'dan bu fikri destekleyen belirli sayıda (üç tane) farklı ve mantıklı argüman sunmasını isteyin."
     ]
   },
   {
     level: 29,
-    question: "Dağıtık Sistemlerde CAP Teoremi Açıklaması Prompt'u",
-    task: "Dağıtık sistemlerdeki Consistency (Tutarlılık), Availability (Erişilebilirlik) ve Partition Tolerance (Bölümleme Toleransı) kavramlarını ve CAP teoreminin bu üç özellikten herhangi ikisinin aynı anda tam olarak sağlanabileceğini anlatan bilgilendirici bir AI metni üretecek bir prompt yazın.",
+    question: "Veri Analizi Süreci Taslağı Oluşturma",
+    task: "Bir AI'dan, bir online film platformunun kullanıcı verilerini (izleme geçmişi, puanlamalar, demografik bilgiler - varsayımsal olarak) analiz ederek 'hangi tür filmlerin hangi kullanıcı segmentleri tarafından daha çok tercih edildiğini' anlama amacıyla izlenmesi gereken temel veri analizi adımlarını (veri toplama, temizleme, keşifsel analiz, segmentasyon, görselleştirme vb.) listelemesini istemek için nasıl bir prompt yazardın?",
     hints: [
-      "Promptunuzda AI'dan Consistency, Availability ve Partition Tolerance kavramlarını ayrı ayrı tanımlamasını isteyin.",
-      "AI'dan CAP teoreminin temel çıkarımını (en fazla iki özellik) net bir şekilde açıklamasını talep edin.",
-      "Farklı senaryolarda (örn: ağ hatası olduğunda) hangi iki özelliğin korunabileceğine dair örnekler eklemesini isteyin (isteğe bağlı)."
+      "Promptunuzda analizin amacını (film tercihleri ve kullanıcı segmentleri arasındaki ilişkiyi bulma) ve kullanılacak (varsayımsal) veri türlerini belirtin.",
+      "AI'dan bu amaca ulaşmak için izlenmesi gereken mantıksal analiz adımlarını (veri toplama, temizleme, analiz, görselleştirme vb.) sıralamasını isteyin.",
+      "Adımların genel bir süreci yansıtmasını ve her adımın amacını kısaca belirtmesini (isteğe bağlı) talep edin."
     ]
   },
   {
     level: 30,
-    question: "Reinforcement Learning (RL) Temelleri Prompt'u",
-    task: "Basit bir oyun (örn: satranç, labirentten çıkma) oynayan bir yapay zeka agent'ı için Reinforcement Learning (Pekiştirmeli Öğrenme) yaklaşımının temel bileşenlerini (Ortam, Agent, State, Action, Reward) bu oyun bağlamında açıklayan bir AI metni üretecek bir prompt yazın.",
+    question: "Belirli Bir Yazarın Üslubunda Felsefi Hikaye Yazma",
+    task: "Bir AI'dan, insanların anılarını dijital olarak yedekleyebildiği bir gelecekte geçen, bu teknolojinin kimlik ve özgünlük üzerindeki etkilerini sorgulayan, yaklaşık 300 kelimelik kısa bir felsefi hikayeyi, ünlü bilim kurgu yazarı Ursula K. Le Guin'in düşünsel derinliği ve sorgulayıcı üslubunu yansıtacak şekilde yazmasını istemek için nasıl bir prompt yazardın?",
     hints: [
-      "Promptunuzda AI'dan açıklama için kullanılacak basit oyunu (veya senaryoyu) belirtmesini isteyin.",
-      "AI'dan RL'nin temel bileşenlerini (Agent, Ortam, State, Action, Reward) tanımlamasını talep edin.",
-      "AI'dan her bir bileşenin seçilen oyun bağlamında ne anlama geldiğini örneklerle açıklamasını isteyin (örn: Satrançta 'State' oyun tahtasının güncel durumu, 'Action' bir taşın hamlesi, 'Reward' oyunu kazanma)."
+      "Promptunuzda hikayenin ana temasını (dijital anı yedekleme ve kimlik sorunu), geçtiği zamanı (gelecek) ve yaklaşık uzunluğunu (300 kelime) belirtin.",
+      "Taklit edilmesi istenen yazarın üslubunu (Ursula K. Le Guin - düşünsel derinlik, sorgulayıcı dil) net bir şekilde tanımlayın.",
+      "AI'dan sadece olay anlatmak yerine, temanın felsefi boyutlarını ve karakterlerin içsel sorgulamalarını ön plana çıkarmasını isteyin."
     ]
   }
 ];
