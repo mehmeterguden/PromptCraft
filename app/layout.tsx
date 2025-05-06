@@ -9,7 +9,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Prompt Öğrenme Platformu",
+  title: "PromptCraft - Prompt Mühendisliği Öğrenme Platformu",
   description: "Prompt mühendisliği öğrenme ve pratik yapma platformu",
   icons: {
     icon: { url: '/favicon.svg', type: 'image/svg+xml' },

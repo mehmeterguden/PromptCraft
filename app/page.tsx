@@ -1584,7 +1584,6 @@ export default function Home() {
       );
 
       // Seviye 1'i seç ve modalı aç
-      setSelectedLevel(levels[0]);
       setIsLevelModalOpen(true);
     } catch (error) {
       console.error('Seviye 1 başlatma sırasında hata:', error);
@@ -1649,9 +1648,9 @@ export default function Home() {
             <div className="relative">
               <div className="absolute -top-24 left-1/2 transform -translate-x-1/2 w-40 h-40 bg-gradient-to-r from-[#4285F4]/20 to-[#34A853]/20 rounded-full blur-3xl" />
               <h1 className="text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#4285F4] to-[#34A853] relative">
-                Prompt Mühendisliği
+                PromptCraft
                 <span className="text-4xl font-medium mt-4 block text-gray-600 dark:text-gray-300">
-                  Öğrenme Platformu
+                  Prompt Mühendisliği Öğrenme Platformu
                 </span>
               </h1>
             </div>
@@ -2034,9 +2033,9 @@ export default function Home() {
       {/* Header */}
       <div className="text-center mb-24">
         <h1 className="text-6xl font-bold mb-12 text-transparent bg-clip-text bg-gradient-to-r from-[#4285F4] to-[#34A853]">
-          Prompt Mühendisliği
+          PromptCraft
           <span className="text-4xl font-medium mt-2 block text-gray-600 dark:text-gray-300">
-            Öğrenme Platformu
+            Prompt Mühendisliği Öğrenme Platformu
           </span>
         </h1>
       </div>
