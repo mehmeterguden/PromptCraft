@@ -2,6 +2,10 @@
 
 Yapay zeka ile etkili prompt yazmayı öğreten interaktif bir eğitim platformu. Google'ın Gemini API'sini kullanarak, kullanıcıların prompt'larını test etmelerine ve optimize etmelerine olanak sağlar.
 
+## 🎥 PromptCraft Tanıtım Videosu
+
+[![PromptCraft Tanıtım Videosu](https://img.youtube.com/vi/Cz0r3P2b9Q4/0.jpg)](https://www.youtube.com/watch?v=Cz0r3P2b9Q4)
+
 ## 🛠️ Teknolojiler
 
 ### Backend
