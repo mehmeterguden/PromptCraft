@@ -4,6 +4,8 @@ Yapay zeka ile etkili prompt yazmayı öğreten interaktif bir eğitim platformu
 
 ## 🎥 PromptCraft Tanıtım Videosu
 
+> 🚀 Bu proje, **Google'ın Yapay Zeka ve Teknoloji Akademisi** tarafından düzenlenen **AIJam 2025** yarışması kapsamında geliştirilmiştir.
+
 [![PromptCraft Tanıtım Videosu](https://img.youtube.com/vi/Cz0r3P2b9Q4/0.jpg)](https://www.youtube.com/watch?v=Cz0r3P2b9Q4)
 
 ## 🛠️ Teknolojiler
